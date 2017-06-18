@@ -50,13 +50,16 @@ func TestMethod(t *testing.T) {
 		assert.NotNil(t, pathHandler, "path handler should be defined")
 		if assert.IsType(t, &mock{}, pathHandler, "path handler is not a mock") {
 			pathMock, _ := pathHandler.(*mock)
-			getMock, ok := pathMock.methods["GET"]
+			getHandler, ok := pathMock.methods["GET"]
 			assert.True(t, ok, "No GET method found")
-			fooValue, ok := getMock.headers["FOO"]
-			assert.True(t, ok, "No FOO header")
-			assert.Equal(t, "BAR", fooValue)
-			assert.Equal(t, "error.json", getMock.responseFileName)
-			assert.Equal(t, 500, getMock.statusCode)
+			if assert.IsType(t,&mockMethod{},getHandler,"handler is not a mockMethod") {
+				getMock, _ := getHandler.(*mockMethod)
+				fooValue, ok := getMock.headers["FOO"]
+				assert.True(t, ok, "No FOO header")
+				assert.Equal(t, "BAR", fooValue)
+				assert.Equal(t, "error.json", getMock.responseFileName)
+				assert.Equal(t, 500, getMock.statusCode)
+			}
 		}
 	}
 }

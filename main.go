@@ -14,6 +14,7 @@ func main() {
 				Header("Content-Type", "application/json")
 				Header("FOO", "BAR")
 				RespondWithFile(500, "./httpMock/error.json")
+				FixedDelay("10ms")
 			})
 		})
 		Endpoint("/foo/bar/", func() {
@@ -21,6 +22,7 @@ func main() {
 				Header("Content-Type", "application/json")
 				Header("FOO", "BAR")
 				RespondWithFile(200, "./httpMock/ok.json")
+				NormalDelay("100ms", "20ms", "500ms")
 			})
 		})
 	})

@@ -1,8 +1,10 @@
 package httpMock
 
 import (
-	"net/http"
+	"fmt"
 	"io"
+	"log"
+	"net/http"
 	"os"
 )
 
@@ -15,7 +17,7 @@ type mockMethod struct {
 
 type mock struct {
 	url     string
-	methods map[string]*mockMethod
+	methods map[string]http.Handler
 }
 
 var currentMockery *http.ServeMux = nil
@@ -31,21 +33,25 @@ func Mockery(configFunc func()) http.Handler {
 var currentMock *mock = nil
 
 func Endpoint(url string, configureFunc func()) {
-	_mock := &mock{url: url, methods: make(map[string]*mockMethod) }
+	_mock := &mock{url: url, methods: make(map[string]http.Handler)}
 	currentMock = _mock
 	defer func() { currentMock = nil }()
 	configureFunc()
-	currentMockery.Handle(url,_mock)
+	currentMockery.Handle(url, _mock)
 }
 
-var currentMockMethod *mockMethod = nil
+var (
+	currentMockMethod        *mockMethod = nil
+	currentMockMethodHandler http.Handler
+)
 
 func Method(method string, configFunc func()) {
 	_mockMethod := &mockMethod{method: method, statusCode: 200, responseFileName: "", headers: make(map[string]string)}
 	currentMockMethod = _mockMethod
-	defer func() { currentMockMethod = nil }()
+	currentMockMethodHandler = _mockMethod
+	defer func() { currentMockMethod = nil; currentMockMethodHandler = nil }()
 	configFunc()
-	currentMock.methods[method] = _mockMethod
+	currentMock.methods[method] = currentMockMethodHandler
 }
 
 func Header(name, value string) {
@@ -70,26 +76,22 @@ func (mm *mockMethod) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 	for hn, hv := range mm.headers {
 		w.Header().Add(hn, hv)
 	}
+	stat, err := os.Stat(mm.responseFileName)
+	if err != nil {
+		log.Printf("ERROR while serving up a file: %+v", err)
+		w.WriteHeader(500)
+		return
+	}
+	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
 	file, err := os.Open(mm.responseFileName)
 	if err != nil {
-		// TODO: Log the error
+		log.Printf("ERROR while serving up a file: %+v", err)
 		w.WriteHeader(500)
 		return
 	}
 	w.WriteHeader(mm.statusCode)
 	_, err = io.Copy(w, file)
 	if err != nil {
-		// TODO: Log the error but we've already written the headers so we will just hope for the best.
+		log.Printf("ERROR while serving up a file: %+v", err)
 	}
 }
-
-// handler, err := Mockery(func() {
-//   Endpoint("/foo/bar/",func() {
-//     Method("GET", func() {
-//       Header("foo","bar")
-//       RespondWithFile(200,"foo.json")
-//     })
-//   })
-// })
-// ...
-// http.Server(8080, handler)...
