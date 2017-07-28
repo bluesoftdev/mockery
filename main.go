@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "code.bluesoftdev.com/v1/repos/mockery/httpMock"
+	. "github.homedepot.com/mockery/httpMock"
 	"log"
 	"net/http"
 )
@@ -9,14 +9,14 @@ import (
 func main() {
 
 	mockery := Mockery(func() {
-		Endpoint("/foo/bar", func() {
-			Method("GET", func() {
-				Header("Content-Type", "application/json")
-				Header("FOO", "BAR")
-				RespondWithFile(500, "./httpMock/error.json")
-				FixedDelay("10ms")
+			Endpoint("/foo/bar", func() {
+				Method("GET", func() {
+					Header("Content-Type", "application/json")
+					Header("FOO", "BAR")
+					RespondWithFile(500, "./httpMock/error.json")
+					FixedDelay("10ms")
+				})
 			})
-		})
 		Endpoint("/foo/bar/", func() {
 			Method("GET", func() {
 				Header("Content-Type", "application/json")
