@@ -1,0 +1,6 @@
+[submodule "vendor/github.homedepot.com/dxp8048/mockery"]
+	path = vendor/github.homedepot.com/dxp8048/mockery
+	url = https://github.homedepot.com/dxp8048/mockery.git
+[submodule "vendor/github.com/stretchr/testify"]
+	path = vendor/github.com/stretchr/testify
+	url = https://github.com/stretchr/testify
