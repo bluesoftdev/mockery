@@ -16,6 +16,12 @@ var RequestKeyIdentity RequestKeySupplier = func(r *http.Request) interface{} {
 
 type RequestKeyPredicate func(interface{}) bool
 
+func RequestKeyStringEquals(str string) RequestKeyPredicate {
+	return func(key interface{}) bool {
+		return key.(string) == str;
+	}
+}
+
 type when struct {
 	predicate     RequestPredicate
 	trueResponse  http.Handler
@@ -76,6 +82,9 @@ func Switch(keySupplier RequestKeySupplier, cases func()) {
 }
 
 func Case(predicate RequestKeyPredicate, responseBuilder func()) {
+	if currentMockMethod == nil {
+		panic("Switch must be inside a method.")
+	}
 	outerMockMethod := currentMockMethod
 	Method(outerMockMethod.method, responseBuilder)
 	responseMockMethod := currentMock.methods[outerMockMethod.method]

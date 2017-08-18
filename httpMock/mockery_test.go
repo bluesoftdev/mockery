@@ -3,8 +3,8 @@ package httpMock
 import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"testing"
 	"net/http/httptest"
+	"testing"
 )
 
 func TestMockery(t *testing.T) {
@@ -53,7 +53,7 @@ func TestMethod(t *testing.T) {
 			pathMock, _ := pathHandler.(*mock)
 			getHandler, ok := pathMock.methods["GET"]
 			assert.True(t, ok, "No GET method found")
-			if assert.IsType(t,&mockMethod{},getHandler,"handler is not a mockMethod") {
+			if assert.IsType(t, &mockMethod{}, getHandler, "handler is not a mockMethod") {
 				getMock, _ := getHandler.(*mockMethod)
 				fooValue, ok := getMock.headers["FOO"]
 				assert.True(t, ok, "No FOO header")
@@ -64,7 +64,6 @@ func TestMethod(t *testing.T) {
 		}
 	}
 }
-
 
 func TestServeHTTP(t *testing.T) {
 	handler := Mockery(func() {
@@ -83,17 +82,17 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	mockWriter := httptest.NewRecorder()
-	mockRequest := httptest.NewRequest("GET", "/foo/bar", nil )
+	mockRequest := httptest.NewRequest("GET", "/foo/bar", nil)
 
-	handler.ServeHTTP(mockWriter,mockRequest)
+	handler.ServeHTTP(mockWriter, mockRequest)
 
 	assert.Equal(t, 500, mockWriter.Code)
 	assert.Equal(t, "{\"error\": \"This is an error\"}", mockWriter.Body.String())
 
 	mockWriter = httptest.NewRecorder()
-	mockRequest = httptest.NewRequest("GET", "/foo/bar/snafu", nil )
+	mockRequest = httptest.NewRequest("GET", "/foo/bar/snafu", nil)
 
-	handler.ServeHTTP(mockWriter,mockRequest)
+	handler.ServeHTTP(mockWriter, mockRequest)
 
 	assert.Equal(t, 200, mockWriter.Code)
 	assert.Equal(t, "{\"ok\": \"everything is ok!\"}", mockWriter.Body.String())
