@@ -63,6 +63,10 @@ func RespondWithFile(status int, fileName string) {
 	currentMockMethod.responseFileName = fileName
 }
 
+func Respond(status int) {
+	currentMockMethod.statusCode = status
+}
+
 func (m *mock) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 	handler, ok := m.methods[request.Method]
 	if ok {
@@ -76,22 +80,27 @@ func (mm *mockMethod) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 	for hn, hv := range mm.headers {
 		w.Header().Add(hn, hv)
 	}
-	stat, err := os.Stat(mm.responseFileName)
-	if err != nil {
-		log.Printf("ERROR while serving up a file: %+v", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
-	file, err := os.Open(mm.responseFileName)
-	if err != nil {
-		log.Printf("ERROR while serving up a file: %+v", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.WriteHeader(mm.statusCode)
-	_, err = io.Copy(w, file)
-	if err != nil {
-		log.Printf("ERROR while serving up a file: %+v", err)
+	if mm.responseFileName != "" {
+		stat, err := os.Stat(mm.responseFileName)
+		if err != nil {
+			log.Printf("ERROR while serving up a file: %+v", err)
+			w.WriteHeader(500)
+			return
+		}
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+		file, err := os.Open(mm.responseFileName)
+		if err != nil {
+			log.Printf("ERROR while serving up a file: %+v", err)
+			w.WriteHeader(500)
+			return
+		}
+		w.WriteHeader(mm.statusCode)
+		_, err = io.Copy(w, file)
+		if err != nil {
+			log.Printf("ERROR while serving up a file: %+v", err)
+		}
+	} else {
+		w.Header().Add("Content-Length", "0")
+		w.WriteHeader(mm.statusCode)
 	}
 }
