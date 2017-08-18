@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"net/http/httptest"
 )
 
 func TestMockery(t *testing.T) {
@@ -61,5 +62,62 @@ func TestMethod(t *testing.T) {
 				assert.Equal(t, 500, getMock.statusCode)
 			}
 		}
+	}
+}
+
+
+func TestServeHTTP(t *testing.T) {
+	handler := Mockery(func() {
+		Endpoint("/foo/bar", func() {
+			Method("GET", func() {
+				Header("FOO", "BAR")
+				RespondWithFile(500, "error.json")
+			})
+		})
+		Endpoint("/foo/bar/", func() {
+			Method("GET", func() {
+				Header("FOO", "BAR")
+				RespondWithFile(200, "ok.json")
+			})
+		})
+	})
+
+	mockWriter := httptest.NewRecorder()
+	mockRequest := httptest.NewRequest("GET", "/foo/bar", nil )
+
+	handler.ServeHTTP(mockWriter,mockRequest)
+
+	assert.Equal(t, 500, mockWriter.Code)
+	assert.Equal(t, "{\"error\": \"This is an error\"}", mockWriter.Body.String())
+
+	mockWriter = httptest.NewRecorder()
+	mockRequest = httptest.NewRequest("GET", "/foo/bar/snafu", nil )
+
+	handler.ServeHTTP(mockWriter,mockRequest)
+
+	assert.Equal(t, 200, mockWriter.Code)
+	assert.Equal(t, "{\"ok\": \"everything is ok!\"}", mockWriter.Body.String())
+}
+
+func BenchmarkServeHTTP(b *testing.B) {
+	handler := Mockery(func() {
+		Endpoint("/foo/bar", func() {
+			Method("GET", func() {
+				Header("FOO", "BAR")
+				RespondWithFile(500, "error.json")
+			})
+		})
+		Endpoint("/foo/bar/", func() {
+			Method("GET", func() {
+				Header("FOO", "BAR")
+				RespondWithFile(200, "ok.json")
+			})
+		})
+	})
+
+	for i := 0; i < b.N; i++ {
+		mockWriter := httptest.NewRecorder()
+		mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
+		handler.ServeHTTP(mockWriter, mockRequest)
 	}
 }
