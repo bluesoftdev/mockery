@@ -1,6 +1,9 @@
 package httpMock
 
-import "net/http"
+import (
+	"net/http"
+	"gopkg.in/xmlpath.v2"
+)
 
 type RequestPredicate func(*http.Request) bool
 
@@ -12,6 +15,19 @@ type RequestKeySupplier func(*http.Request) interface{}
 
 var RequestKeyIdentity RequestKeySupplier = func(r *http.Request) interface{} {
 	return r
+}
+
+// Uses XPATH expression to extract a string from the body of the request.
+func ExtractXPathString(xpath string) RequestKeySupplier {
+	path := xmlpath.MustCompile(xpath)
+	return func(r *http.Request) interface{} {
+		str := ""
+		root, err := xmlpath.Parse(r.Body)
+		if err == nil {
+			str, _ = path.String(root)
+		}
+		return str
+	}
 }
 
 type RequestKeyPredicate func(interface{}) bool

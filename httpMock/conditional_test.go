@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"io/ioutil"
+	"strings"
 )
 
 func TestWhen(t *testing.T) {
@@ -120,4 +122,11 @@ func TestSwitch(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestExtractXPathString(t *testing.T) {
+	xml := `<foo><bar snafu="fubar"></bar></foo>`
+	path := "/foo/bar/@snafu"
+	result := ExtractXPathString(path)(&http.Request{Body: ioutil.NopCloser(strings.NewReader(xml))})
+	assert.Equal(t,"fubar",result)
 }
