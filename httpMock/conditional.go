@@ -3,6 +3,7 @@ package httpMock
 import (
 	"net/http"
 	"gopkg.in/xmlpath.v2"
+	"strings"
 )
 
 type RequestPredicate func(*http.Request) bool
@@ -27,6 +28,28 @@ func ExtractXPathString(xpath string) RequestKeySupplier {
 			str, _ = path.String(root)
 		}
 		return str
+	}
+}
+
+func ExtractPathElementByIndex(idx int) RequestKeySupplier {
+	return func(r *http.Request) interface{} {
+		elements := strings.Split(r.URL.Path, "/")
+		var i int
+		if idx < 0 {
+			i = len(elements)+idx
+		} else {
+			i = idx
+		}
+		if i < 0 || i >= len(elements) {
+			return ""
+		}
+		return elements[i]
+	}
+}
+
+func ExtractQueryParameter(name string) RequestKeySupplier {
+	return func(r *http.Request) interface{} {
+		return r.URL.Query().Get(name)
 	}
 }
 

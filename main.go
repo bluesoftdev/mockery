@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "github.homedepot.com/assistedSelling/mockery/httpMock"
+	. "github.homedepot.com/dxp8048/mockery/httpMock"
 	"log"
 	"net/http"
 )

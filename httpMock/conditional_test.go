@@ -7,6 +7,7 @@ import (
 	"testing"
 	"io/ioutil"
 	"strings"
+	"net/url"
 )
 
 func TestWhen(t *testing.T) {
@@ -129,4 +130,41 @@ func TestExtractXPathString(t *testing.T) {
 	path := "/foo/bar/@snafu"
 	result := ExtractXPathString(path)(&http.Request{Body: ioutil.NopCloser(strings.NewReader(xml))})
 	assert.Equal(t,"fubar",result)
+}
+
+func TestExtractQueryParameter(t *testing.T) {
+	request := &http.Request{URL: &url.URL{RawQuery: "foo=bar&snafu=fubar"}}
+	result := ExtractQueryParameter("foo")(request)
+	assert.Equal(t, "bar", result)
+	result = ExtractQueryParameter("snafu")(request)
+	assert.Equal(t, "fubar", result)
+}
+
+func TestExtractPathElementByIndex(t *testing.T) {
+
+	url, _ := url.Parse("http://localhost/foo/bar/snafu")
+	request := &http.Request{URL: url}
+	result := ExtractPathElementByIndex(-1)(request)
+	assert.Equal(t, "snafu", result)
+
+	result = ExtractPathElementByIndex(-2)(request)
+	assert.Equal(t, "bar", result)
+
+	result = ExtractPathElementByIndex(-3)(request)
+	assert.Equal(t, "foo", result)
+
+	result = ExtractPathElementByIndex(-4)(request)
+	assert.Equal(t, "", result)
+
+	result = ExtractPathElementByIndex(4)(request)
+	assert.Equal(t, "", result)
+
+	result = ExtractPathElementByIndex(3)(request)
+	assert.Equal(t, "snafu", result)
+
+	result = ExtractPathElementByIndex(2)(request)
+	assert.Equal(t, "bar", result)
+
+	result = ExtractPathElementByIndex(1)(request)
+	assert.Equal(t, "foo", result)
 }
