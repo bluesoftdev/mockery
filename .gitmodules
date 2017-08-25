@@ -4,3 +4,6 @@
 [submodule "vendor/github.com/stretchr/testify"]
 	path = vendor/github.com/stretchr/testify
 	url = https://github.com/stretchr/testify
+[submodule "vendor/gopkg.in/xmlpath.v2"]
+	path = vendor/gopkg.in/xmlpath.v2
+	url = https://gopkg.in/xmlpath.v2
