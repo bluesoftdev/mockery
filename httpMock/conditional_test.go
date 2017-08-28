@@ -2,12 +2,12 @@ package httpMock
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"testing"
-	"io/ioutil"
-	"strings"
 	"net/url"
+	"strings"
+	"testing"
 )
 
 func TestWhen(t *testing.T) {
@@ -129,7 +129,7 @@ func TestExtractXPathString(t *testing.T) {
 	xml := `<foo><bar snafu="fubar"></bar></foo>`
 	path := "/foo/bar/@snafu"
 	result := ExtractXPathString(path)(&http.Request{Body: ioutil.NopCloser(strings.NewReader(xml))})
-	assert.Equal(t,"fubar",result)
+	assert.Equal(t, "fubar", result)
 }
 
 func TestExtractQueryParameter(t *testing.T) {
@@ -167,4 +167,10 @@ func TestExtractPathElementByIndex(t *testing.T) {
 
 	result = ExtractPathElementByIndex(1)(request)
 	assert.Equal(t, "foo", result)
+}
+
+func TestRequestKeyStringMatches(t *testing.T) {
+	key := "foo"
+	assert.False(t, RequestKeyStringMatches("\\d+")(key))
+	assert.True(t, RequestKeyStringMatches("[a-z]+")(key))
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"gopkg.in/xmlpath.v2"
 	"strings"
+	"regexp"
 )
 
 type RequestPredicate func(*http.Request) bool
@@ -58,6 +59,13 @@ type RequestKeyPredicate func(interface{}) bool
 func RequestKeyStringEquals(str string) RequestKeyPredicate {
 	return func(key interface{}) bool {
 		return key.(string) == str;
+	}
+}
+
+func RequestKeyStringMatches(regexStr string) RequestKeyPredicate {
+	regex := regexp.MustCompile(regexStr)
+	return func(key interface{}) bool {
+		return regex.MatchString(key.(string))
 	}
 }
 
