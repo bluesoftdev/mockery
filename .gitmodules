@@ -4,3 +4,6 @@
 [submodule "vendor/gopkg.in/xmlpath.v2"]
 	path = vendor/gopkg.in/xmlpath.v2
 	url = https://gopkg.in/xmlpath.v2
+[submodule "vendor/github.com/montanaflynn/stats"]
+	path = vendor/github.com/montanaflynn/stats
+	url = https://github.com/montanaflynn/stats
