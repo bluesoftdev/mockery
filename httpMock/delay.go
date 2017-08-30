@@ -41,7 +41,7 @@ func FixedDelay(d string) {
 }
 
 func NormalDelay(mean, stdDev, max string) {
-	nd := normalDelay{delayBase: delayBase{handler: currentMockMethod}, mean: 0, stdDev: 0, max: 0}
+	nd := normalDelay{delayBase: delayBase{handler: currentMockMethodHandler}, mean: 0, stdDev: 0, max: 0}
 	nd.waiter = &nd
 	var err error
 	nd.mean, err = time.ParseDuration(mean)
