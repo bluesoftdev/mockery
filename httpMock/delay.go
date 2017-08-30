@@ -3,6 +3,7 @@ package httpMock
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"time"
@@ -63,19 +64,10 @@ func (fd *fixedDelay) Wait() error {
 	return nil
 }
 
-func scale(scale, x float64) float64 {
-	return (1 + 10/(x*x+10))*scale;
-}
-
 func (nd *normalDelay) Wait() error {
 	seed := rand.NormFloat64() * float64(nd.stdDev)
-	var scaled float64
-	if seed < 0 {
-		scaled = - scale(float64(nd.mean),seed)
-	} else {
-		scaled = scale(float64(nd.max - nd.mean),seed)
-	}
-	waitTime := time.Duration(float64(nd.mean) + scaled)
+
+	waitTime := time.Duration(float64(nd.mean) + math.Min(seed, float64(nd.max)))
 	time.Sleep(waitTime)
 	return nil
 }
