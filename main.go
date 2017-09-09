@@ -25,14 +25,18 @@ func main() {
 				NormalDelay("10s", "5s", "20s")
 			})
 		})
-		Endpoint("/VPPService/rs/vpp/calculateVolumePricing/", func() {
-			Method("POST", func() {
-				Header("Content-Type", "application/xml")
-				Header("Cache-Control", "no-cache")
-				Header("Access-Control-Allow-Origin", "*")
-				RespondWithFile(http.StatusOK, "usom_pricing_bidroom_service_response.xml")
-				NormalDelay("300ms", "120ms", "5s")
+		Endpoint("/snafu/", func() {
+			Method("GET", func() {
+				Switch(ExtractQueryParameter("foo"), func() {
+					Case(RequestKeyStringEquals("bar"), func() {
+						Header("Content-Type", "application/xml")
+						Header("Cache-Control", "no-cache")
+						Header("Access-Control-Allow-Origin", "*")
+						RespondWithFile(http.StatusOK, "snafu_foo_bar_response.xml")
+					})
+				})
 			})
+			NormalDelay("300ms", "120ms", "5s")
 		})
 	})
 
