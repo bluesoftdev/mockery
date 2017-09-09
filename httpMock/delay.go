@@ -41,7 +41,7 @@ func FixedDelay(d string) {
 }
 
 func NormalDelay(mean, stdDev, max string) {
-	nd := normalDelay{delayBase: delayBase{handler: currentMockMethod}, mean: 0, stdDev: 0, max: 0}
+	nd := normalDelay{delayBase: delayBase{handler: currentMockMethodHandler}, mean: 0, stdDev: 0, max: 0}
 	nd.waiter = &nd
 	var err error
 	nd.mean, err = time.ParseDuration(mean)
@@ -66,13 +66,8 @@ func (fd *fixedDelay) Wait() error {
 
 func (nd *normalDelay) Wait() error {
 	seed := rand.NormFloat64() * float64(nd.stdDev)
-	var scaled float64
-	if seed < 0 {
-		scaled = (float64(nd.mean) / math.MaxFloat64) * seed
-	} else {
-		scaled = (float64(nd.max-nd.mean) / math.MaxFloat64) * seed
-	}
-	waitTime := time.Duration(float64(nd.mean) + scaled)
+
+	waitTime := time.Duration(float64(nd.mean) + math.Min(seed, float64(nd.max)))
 	time.Sleep(waitTime)
 	return nil
 }

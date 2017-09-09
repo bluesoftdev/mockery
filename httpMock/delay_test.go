@@ -2,6 +2,7 @@ package httpMock
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/montanaflynn/stats"
 	"net/http"
 	"testing"
 	"time"
@@ -37,4 +38,21 @@ func TestNormalDelay(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestNormalDelay2(t *testing.T) {
+	nd := normalDelay{mean: time.Millisecond, stdDev: 10*time.Microsecond, max: 2 * time.Millisecond}
+	samples := make([]time.Duration,0,1000)
+	for i := 0; i < 1000; i++ {
+		start := time.Now()
+		nd.Wait()
+		end := time.Now()
+		samples := append(samples,end.Sub(start))
+	}
+	population := stats.LoadRawData(samples)
+
+	mean, err := population.Mean()
+	assert.NoError(t,err)
+	assert.Equal(t, float64(time.Millisecond), mean)
+
 }
