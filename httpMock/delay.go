@@ -2,8 +2,6 @@ package httpMock
 
 import (
 	"fmt"
-	"log"
-	"math"
 	"math/rand"
 	"net/http"
 	"time"
@@ -14,8 +12,7 @@ type waiter interface {
 }
 
 type delayBase struct {
-	handler http.Handler
-	waiter  waiter
+	waiter waiter
 }
 
 type fixedDelay struct {
@@ -35,13 +32,13 @@ func FixedDelay(d string) {
 	if err != nil {
 		panic(fmt.Sprintf("Parsing time for FixedDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
 	}
-	fd := fixedDelay{delayBase: delayBase{handler: currentMockMethod}, delay: dd}
+	fd := fixedDelay{delayBase: delayBase{}, delay: dd}
 	fd.waiter = &fd
-	currentMockMethodHandler = &fd
+	DecorateHandler(&fd, NoopHandler)
 }
 
 func NormalDelay(mean, stdDev, max string) {
-	nd := normalDelay{delayBase: delayBase{handler: currentMockMethodHandler}, mean: 0, stdDev: 0, max: 0}
+	nd := normalDelay{delayBase: delayBase{}, mean: 0, stdDev: 0, max: 0}
 	nd.waiter = &nd
 	var err error
 	nd.mean, err = time.ParseDuration(mean)
@@ -56,7 +53,7 @@ func NormalDelay(mean, stdDev, max string) {
 	if err != nil {
 		panic(fmt.Sprintf("Parsing max for NormalDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
 	}
-	currentMockMethodHandler = &nd
+	DecorateHandler(&nd, NoopHandler)
 }
 
 func (fd *fixedDelay) Wait() error {
@@ -64,20 +61,32 @@ func (fd *fixedDelay) Wait() error {
 	return nil
 }
 
-func (nd *normalDelay) Wait() error {
-	seed := rand.NormFloat64() * float64(nd.stdDev)
+func (nd *normalDelay) NextWaitTime() time.Duration {
+	seed := rand.NormFloat64()
 
-	waitTime := time.Duration(float64(nd.mean) + math.Min(seed, float64(nd.max)))
-	time.Sleep(waitTime)
+	if seed < 0 {
+		if nd.stdDev*5 > nd.mean {
+			seed = seed * float64(nd.mean) / 5.0
+		} else {
+			seed = seed * float64(nd.stdDev)
+		}
+	} else {
+		if nd.mean+nd.stdDev*5 > nd.max {
+			seed = seed * float64(nd.max-nd.mean) / 5.0
+		} else {
+			seed = seed * float64(nd.stdDev)
+		}
+	}
+
+	return time.Duration(float64(nd.mean) + seed)
+}
+
+func (nd *normalDelay) Wait() error {
+
+	time.Sleep(nd.NextWaitTime())
 	return nil
 }
 
 func (d *delayBase) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := d.waiter.Wait()
-	if err != nil {
-		log.Printf("ERROR: waiting for waiter to complete: %s", err.Error())
-		w.WriteHeader(500)
-	} else {
-		d.handler.ServeHTTP(w, req)
-	}
+	d.waiter.Wait()
 }

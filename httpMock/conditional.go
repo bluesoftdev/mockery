@@ -1,10 +1,10 @@
 package httpMock
 
 import (
-	"net/http"
 	"gopkg.in/xmlpath.v2"
-	"strings"
+	"net/http"
 	"regexp"
+	"strings"
 )
 
 // RequestPredicate is a function that takes a request and returns true or false.
@@ -46,7 +46,7 @@ func ExtractPathElementByIndex(idx int) RequestKeySupplier {
 		elements := strings.Split(r.URL.Path, "/")
 		var i int
 		if idx < 0 {
-			i = len(elements)+idx
+			i = len(elements) + idx
 		} else {
 			i = idx
 		}
@@ -72,7 +72,7 @@ type RequestKeyPredicate func(interface{}) bool
 // if the strings are equal.
 func RequestKeyStringEquals(str string) RequestKeyPredicate {
 	return func(key interface{}) bool {
-		return key.(string) == str;
+		return key.(string) == str
 	}
 }
 
@@ -94,11 +94,13 @@ type when struct {
 // When can be used within a Method's config function to conditionally choose one response or another.
 func When(predicate RequestPredicate, trueResponseBuilder func(), falseResponseBuilder func()) {
 
-	outerMockMethod := currentMockMethod
-	Method(outerMockMethod.method, trueResponseBuilder)
-	trueMockMethod := currentMock.methods[outerMockMethod.method]
-	Method(outerMockMethod.method, falseResponseBuilder)
-	falseMockMethod := currentMock.methods[outerMockMethod.method]
+	outerMockMethodHandler := currentMockMethodHandler
+	trueResponseBuilder()
+	trueMockMethod := currentMockMethodHandler
+
+	currentMockMethodHandler = outerMockMethodHandler
+	falseResponseBuilder()
+	falseMockMethod := currentMockMethodHandler
 
 	currentMockMethodHandler = &when{predicate, trueMockMethod, falseMockMethod}
 }
@@ -139,10 +141,14 @@ var currentSwitch *switchCaseSet
 // first Case whose predicate returns true will be selected.  Otherwise the response defined in the Default is used.
 // If there is no Default, then 404 is returned with an empty body.
 func Switch(keySupplier RequestKeySupplier, cases func()) {
+	handler := currentMockMethodHandler
 	currentSwitch = &switchCaseSet{
 		keySupplier:    keySupplier,
 		switchCases:    make([]*switchCase, 0, 10),
-		defaultHandler: NotFound,
+		defaultHandler: http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+			handler.ServeHTTP(w,request)
+			w.WriteHeader(404)
+		}),
 	}
 	cases()
 	currentMockMethodHandler = currentSwitch
@@ -154,15 +160,15 @@ func Case(predicate RequestKeyPredicate, responseBuilder func()) {
 	if currentMockMethod == nil {
 		panic("Switch must be inside a method.")
 	}
-	outerMockMethod := currentMockMethod
-	Method(outerMockMethod.method, responseBuilder)
-	responseMockMethod := currentMock.methods[outerMockMethod.method]
+	outerMockMethodHandler := currentMockMethodHandler
+	responseBuilder()
+	responseMockMethod := currentMockMethodHandler
 	if predicate != nil {
 		currentSwitch.switchCases = append(currentSwitch.switchCases, &switchCase{predicate, responseMockMethod})
 	} else {
 		currentSwitch.defaultHandler = responseMockMethod
 	}
-	currentMockMethod = outerMockMethod
+	currentMockMethodHandler = outerMockMethodHandler
 }
 
 // Default used to define the response that will be returned when no other case is triggered.  The default can be placed

@@ -22,43 +22,35 @@ func TestWhen(t *testing.T) {
 				}, func() {
 					Respond(406)
 				})
+				Header("Foo", "Bar")
 			})
 		})
 	})
 
 	assert.NotNil(t, handler)
-	if assert.IsType(t, &http.ServeMux{}, handler, "mockery is not an http.ServeMux") {
-		serveMux, _ := handler.(*http.ServeMux)
-		testReq, err := http.NewRequest("GET", "http://localhost/foo/bar", nil)
+	testReq := httptest.NewRequest("GET", "http://localhost/foo/bar", nil)
 
-		assert.NoError(t, err)
-		pathHandler, pattern := serveMux.Handler(testReq)
-		assert.NotEmpty(t, pattern, "pattern should not be empty: %s", pattern)
-		assert.NotNil(t, pathHandler, "path handler should be defined")
-		if assert.IsType(t, &mock{}, pathHandler, "path handler is not a mock") {
-			pathMock, _ := pathHandler.(*mock)
-			getHandler, ok := pathMock.methods["GET"]
-			assert.True(t, ok, "No GET method found")
-			if assert.IsType(t, &when{}, getHandler, "handler is not a when") {
-				mockWriter := httptest.NewRecorder()
-				handler.ServeHTTP(mockWriter, testReq)
-				result := mockWriter.Result()
-				assert.Equal(t, 406, result.StatusCode)
+	mockWriter := httptest.NewRecorder()
+	handler.ServeHTTP(mockWriter, testReq)
+	result := mockWriter.Result()
+	assert.Equal(t, 406, result.StatusCode)
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 
-				mockWriter = httptest.NewRecorder()
-				testReq.Header.Add("Accept", "application/json")
-				handler.ServeHTTP(mockWriter, testReq)
-				result = mockWriter.Result()
-				assert.Equal(t, 200, result.StatusCode)
-			}
-		}
-	}
+	mockWriter = httptest.NewRecorder()
+	testReq.Header.Add("Accept", "application/json")
+	handler.ServeHTTP(mockWriter, testReq)
+	result = mockWriter.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+	assert.Equal(t, "", result.Trailer.Get("Content-Type"))
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 }
 
 func TestSwitch(t *testing.T) {
 	handler := Mockery(func() {
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
+				Header("Foo", "Bar")
 				Switch(func(r *http.Request) interface{} {
 					return r.Header.Get("Accept")
 				}, func() {
@@ -83,46 +75,33 @@ func TestSwitch(t *testing.T) {
 	})
 
 	assert.NotNil(t, handler)
-	if assert.IsType(t, &http.ServeMux{}, handler, "mockery is not an http.ServeMux") {
-		serveMux, _ := handler.(*http.ServeMux)
-		testReq, err := http.NewRequest("GET", "http://localhost/foo/bar", nil)
 
-		assert.NoError(t, err)
-		pathHandler, pattern := serveMux.Handler(testReq)
-		assert.NotEmpty(t, pattern, "pattern should not be empty: %s", pattern)
-		assert.NotNil(t, pathHandler, "path handler should be defined")
-		if assert.IsType(t, &mock{}, pathHandler, "path handler is not a mock") {
-			pathMock, _ := pathHandler.(*mock)
-			getHandler, ok := pathMock.methods["GET"]
-			assert.True(t, ok, "No GET method found")
-			if assert.IsType(t, &switchCaseSet{}, getHandler, "handler is not a when") {
-				mockWriter := httptest.NewRecorder()
-				handler.ServeHTTP(mockWriter, testReq)
-				result := mockWriter.Result()
-				assert.Equal(t, 406, result.StatusCode)
+	testReq, err := http.NewRequest("GET", "http://localhost/foo/bar", nil)
 
-				mockWriter = httptest.NewRecorder()
-				testReq.Header.Set("Accept", "application/json")
-				handler.ServeHTTP(mockWriter, testReq)
-				result = mockWriter.Result()
-				assert.Equal(t, 200, result.StatusCode)
-				assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+	assert.NoError(t, err)
 
-				mockWriter = httptest.NewRecorder()
-				testReq.Header.Set("Accept", "application/xml")
-				handler.ServeHTTP(mockWriter, testReq)
-				result = mockWriter.Result()
-				assert.Equal(t, 200, result.StatusCode)
-				assert.Equal(t, "application/xml", result.Header.Get("Content-Type"))
+	mockWriter := httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/json")
+	handler.ServeHTTP(mockWriter, testReq)
+	result := mockWriter.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 
-				mockWriter = httptest.NewRecorder()
-				testReq.Header.Set("Accept", "application/pdf")
-				handler.ServeHTTP(mockWriter, testReq)
-				result = mockWriter.Result()
-				assert.Equal(t, 406, result.StatusCode)
-			}
-		}
-	}
+	mockWriter = httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/xml")
+	handler.ServeHTTP(mockWriter, testReq)
+	result = mockWriter.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	assert.Equal(t, "application/xml", result.Header.Get("Content-Type"))
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
+
+	mockWriter = httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/pdf")
+	handler.ServeHTTP(mockWriter, testReq)
+	result = mockWriter.Result()
+	assert.Equal(t, 406, result.StatusCode)
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 }
 
 func TestExtractXPathString(t *testing.T) {

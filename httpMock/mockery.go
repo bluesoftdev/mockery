@@ -8,18 +8,6 @@ import (
 	"os"
 )
 
-type mockMethod struct {
-	method           string
-	statusCode       int
-	responseFileName string
-	headers          map[string]string
-}
-
-type mock struct {
-	url     string
-	methods map[string]http.Handler
-}
-
 var currentMockery *http.ServeMux = nil
 
 func Mockery(configFunc func()) http.Handler {
@@ -28,6 +16,11 @@ func Mockery(configFunc func()) http.Handler {
 	defer func() { currentMockery = nil }()
 	configFunc()
 	return mockery
+}
+
+type mock struct {
+	url     string
+	methods map[string]http.Handler
 }
 
 var currentMock *mock = nil
@@ -40,33 +33,6 @@ func Endpoint(url string, configureFunc func()) {
 	currentMockery.Handle(url, _mock)
 }
 
-var (
-	currentMockMethod        *mockMethod = nil
-	currentMockMethodHandler http.Handler
-)
-
-func Method(method string, configFunc func()) {
-	_mockMethod := &mockMethod{method: method, statusCode: 200, responseFileName: "", headers: make(map[string]string)}
-	currentMockMethod = _mockMethod
-	currentMockMethodHandler = _mockMethod
-	defer func() { currentMockMethod = nil; currentMockMethodHandler = nil }()
-	configFunc()
-	currentMock.methods[method] = currentMockMethodHandler
-}
-
-func Header(name, value string) {
-	currentMockMethod.headers[name] = value
-}
-
-func RespondWithFile(status int, fileName string) {
-	currentMockMethod.statusCode = status
-	currentMockMethod.responseFileName = fileName
-}
-
-func Respond(status int) {
-	currentMockMethod.statusCode = status
-}
-
 func (m *mock) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 	handler, ok := m.methods[request.Method]
 	if ok {
@@ -76,31 +42,97 @@ func (m *mock) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
+type mockMethod struct {
+	method           string
+}
+
+var (
+	currentMockMethod        *mockMethod = nil
+	currentMockMethodHandler http.Handler
+)
+
 func (mm *mockMethod) ServeHTTP(w http.ResponseWriter, request *http.Request) {
-	for hn, hv := range mm.headers {
-		w.Header().Add(hn, hv)
+	// Nothing to do.
+	// The decorators should have taken care of everything by this point.
+}
+
+func Method(method string, configFunc func()) {
+	_mockMethod := &mockMethod{method: method}
+	currentMockMethod = _mockMethod
+	currentMockMethodHandler = _mockMethod
+	defer func() { currentMockMethod = nil; currentMockMethodHandler = nil }()
+	configFunc()
+	currentMock.methods[method] = currentMockMethodHandler
+}
+
+func Header(name, value string) {
+	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		w.Header().Add(name, value)
+	}), NoopHandler)
+}
+
+func Trailer(name, value string) {
+	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		w.Header().Add("Trailer", name)
+	}),http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		w.Header().Add(name, value)
+	}))
+}
+
+type respondWithFile struct {
+	statusCode int
+	fileName   string
+}
+
+func (rwf *respondWithFile) ServeHTTP(w http.ResponseWriter, request *http.Request) {
+	stat, err := os.Stat(rwf.fileName)
+	if err != nil {
+		log.Printf("ERROR while serving up a file: %+v", err)
+		w.WriteHeader(500)
+		return
 	}
-	if mm.responseFileName != "" {
-		stat, err := os.Stat(mm.responseFileName)
-		if err != nil {
-			log.Printf("ERROR while serving up a file: %+v", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
-		file, err := os.Open(mm.responseFileName)
-		if err != nil {
-			log.Printf("ERROR while serving up a file: %+v", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.WriteHeader(mm.statusCode)
-		_, err = io.Copy(w, file)
-		if err != nil {
-			log.Printf("ERROR while serving up a file: %+v", err)
-		}
-	} else {
-		w.Header().Add("Content-Length", "0")
-		w.WriteHeader(mm.statusCode)
+	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+	file, err := os.Open(rwf.fileName)
+	if err != nil {
+		log.Printf("ERROR while serving up a file: %+v", err)
+		w.WriteHeader(500)
+		return
 	}
+	w.WriteHeader(rwf.statusCode)
+	_, err = io.Copy(w, file)
+	if err != nil {
+		log.Printf("ERROR while serving up a file: %+v", err)
+	}
+}
+
+func RespondWithFile(status int, fileName string) {
+	DecorateHandler(NoopHandler,&respondWithFile{status, fileName})
+}
+
+type respondWithStatus struct {
+	statusCode int
+}
+
+func (rws *respondWithStatus) ServeHTTP(w http.ResponseWriter, request *http.Request) {
+	w.WriteHeader(rws.statusCode)
+}
+
+func Respond(status int) {
+	DecorateHandler(NoopHandler,&respondWithStatus{status})
+}
+
+func CurrentHandler() http.Handler {
+	return currentMockMethodHandler
+}
+
+var NoopHandler http.HandlerFunc = func(w http.ResponseWriter, request *http.Request) {
+}
+
+func DecorateHandler(preHandler, postHandler http.Handler) {
+	delegate := CurrentHandler()
+	currentMockMethodHandler = http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		preHandler.ServeHTTP(w,request)
+		delegate.ServeHTTP(w,request)
+		postHandler.ServeHTTP(w, request)
+	})
 }

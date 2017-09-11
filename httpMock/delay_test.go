@@ -1,58 +1,96 @@
 package httpMock
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"github.com/montanaflynn/stats"
-	"net/http"
+	"github.com/stretchr/testify/assert"
+	"math"
 	"testing"
 	"time"
 )
 
-func TestNormalDelay(t *testing.T) {
-	handler := Mockery(func() {
-		Endpoint("/foo/bar", func() {
-			Method("GET", func() {
-				RespondWithFile(200, "./ok.json")
-				Header("Content-Type", "application/json")
-				NormalDelay("10ms", "1ms", "500ms")
-			})
-		})
-	})
-	assert.NotNil(t, handler, "handler is nil")
-	if assert.IsType(t, &http.ServeMux{}, handler, "mockery is not an http.ServeMux") {
-		serveMux, _ := handler.(*http.ServeMux)
-		testReq, err := http.NewRequest("GET", "http://localhost/foo/bar", nil)
-		assert.NoError(t, err)
-		pathHandler, pattern := serveMux.Handler(testReq)
-		assert.NotEmpty(t, pattern, "pattern should not be empty: %s", pattern)
-		assert.NotNil(t, pathHandler, "path handler should be defined")
-		if assert.IsType(t, &mock{}, pathHandler, "path handler is not a mock") {
-			pathMock, _ := pathHandler.(*mock)
-			getHandler, ok := pathMock.methods["GET"]
-			assert.True(t, ok, "No GET method found")
-			if assert.IsType(t, &normalDelay{}, getHandler, "handler is not a normalDelay") {
-				getMock, _ := getHandler.(*normalDelay)
-				assert.Equal(t, time.Millisecond*10, getMock.mean)
-				assert.Equal(t, time.Millisecond, getMock.stdDev)
-				assert.Equal(t, time.Millisecond*500, getMock.max)
+func makeHistogram(buckets, samples []time.Duration) []int {
+	histo := make([]int, len(buckets)+1, len(buckets)+1)
+	for _, s := range samples {
+		counted := false
+		for i := range buckets {
+			if s < buckets[i] {
+				histo[i] += 1
+				counted = true
+				break
 			}
 		}
+		if !counted {
+			histo[len(histo)-1] += 1
+		}
+	}
+	return histo
+}
+
+func makeBuckets(size int, max time.Duration) []time.Duration {
+	interval := time.Duration(math.Floor(float64(max)/float64(size) + 0.5))
+	size = int(max / interval)
+	buckets := make([]time.Duration, size, size)
+	var v time.Duration
+	for i := 0; i < size; i += 1 {
+		v += interval
+		buckets[i] = v
+	}
+	return buckets
+}
+
+func printHistogram(buckets []time.Duration, histo []int, maxWidth int) {
+	var max int
+	for _, h := range histo {
+		if h > max {
+			max = h
+		}
+	}
+	scale := float64(maxWidth) / float64(max)
+	for i := range histo {
+		if i < len(buckets) {
+			fmt.Printf(" %-6s: ", buckets[i].String())
+		} else {
+			fmt.Printf(">%-6s: ", buckets[len(buckets)-1].String())
+		}
+		blocksCalc := scale * float64(histo[i])
+		blocks := int(math.Ceil(blocksCalc))
+		for i = 0; i < blocks; i++ {
+			fmt.Print("#")
+		}
+		fmt.Print("\n")
 	}
 }
 
-func TestNormalDelay2(t *testing.T) {
-	nd := normalDelay{mean: time.Millisecond, stdDev: 10*time.Microsecond, max: 2 * time.Millisecond}
-	samples := make([]time.Duration,0,1000)
-	for i := 0; i < 1000; i++ {
-		start := time.Now()
-		nd.Wait()
-		end := time.Now()
-		samples := append(samples,end.Sub(start))
+func TestNormalDelay(t *testing.T) {
+	nd := normalDelay{mean: time.Millisecond, stdDev: 100 * time.Microsecond, max: 2 * time.Millisecond}
+	samples := make([]time.Duration, 0, 100000)
+	for i := 0; i < 100000; i++ {
+		samples = append(samples, nd.NextWaitTime())
 	}
 	population := stats.LoadRawData(samples)
 
 	mean, err := population.Mean()
-	assert.NoError(t,err)
-	assert.Equal(t, float64(time.Millisecond), mean)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(time.Millisecond), mean, 10*float64(time.Microsecond))
 
+	median, err := population.Median()
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(time.Millisecond), median, 100*float64(time.Microsecond))
+
+	p95, err := population.Percentile(85.0)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(time.Millisecond+100*time.Microsecond), p95, 10*float64(time.Microsecond))
+
+	p975, err := population.Percentile(97.5)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(time.Millisecond+200*time.Microsecond), p975, 10*float64(time.Microsecond))
+
+	p9985, err := population.Percentile(99.85)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(time.Millisecond+300*time.Microsecond), p9985, 10*float64(time.Microsecond))
+
+	buckets := makeBuckets(50, 2*time.Millisecond)
+	histogram := makeHistogram(buckets, samples)
+	printHistogram(buckets, histogram, 40)
 }

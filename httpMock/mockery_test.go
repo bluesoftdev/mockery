@@ -51,16 +51,8 @@ func TestMethod(t *testing.T) {
 		assert.NotNil(t, pathHandler, "path handler should be defined")
 		if assert.IsType(t, &mock{}, pathHandler, "path handler is not a mock") {
 			pathMock, _ := pathHandler.(*mock)
-			getHandler, ok := pathMock.methods["GET"]
+			_, ok := pathMock.methods["GET"]
 			assert.True(t, ok, "No GET method found")
-			if assert.IsType(t, &mockMethod{}, getHandler, "handler is not a mockMethod") {
-				getMock, _ := getHandler.(*mockMethod)
-				fooValue, ok := getMock.headers["FOO"]
-				assert.True(t, ok, "No FOO header")
-				assert.Equal(t, "BAR", fooValue)
-				assert.Equal(t, "error.json", getMock.responseFileName)
-				assert.Equal(t, 500, getMock.statusCode)
-			}
 		}
 	}
 }
@@ -96,6 +88,7 @@ func TestServeHTTP(t *testing.T) {
 
 	assert.Equal(t, 200, mockWriter.Code)
 	assert.Equal(t, "{\"ok\": \"everything is ok!\"}", mockWriter.Body.String())
+	assert.Equal(t, "BAR", mockWriter.Header().Get("FOO"))
 }
 
 func BenchmarkServeHTTP(b *testing.B) {
