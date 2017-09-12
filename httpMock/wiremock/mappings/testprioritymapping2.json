@@ -1,0 +1,16 @@
+{
+  "priority": 101,
+  "request": {
+    "method": "GET",
+    "urlPattern": "/testpriority.*"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "key": "priority101"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

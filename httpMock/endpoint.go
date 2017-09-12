@@ -22,3 +22,10 @@ func EndpointForCondition(predicate RequestPredicate, configFunc func()) {
 	currentMockery.HandleForCondition(DEFAULT_PRIORITY, predicate, currentMockHandler)
 	currentMockHandler = outerCurrentMockHandler
 }
+
+func EndpointForConditionWithPriority(priority int,predicate RequestPredicate, configFunc func()) {
+	outerCurrentMockHandler := currentMockHandler
+	configFunc()
+	currentMockery.HandleForCondition(priority, predicate, currentMockHandler)
+	currentMockHandler = outerCurrentMockHandler
+}

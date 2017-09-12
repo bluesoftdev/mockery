@@ -64,3 +64,41 @@ func TestWireMockEndpointsJsonMapping(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "value2", js1["key"])
 }
+
+
+func TestWireMockEndpointsPriorities(t *testing.T) {
+	mockery := Mockery(func() {
+		WireMockEndpoints("./wiremock")
+	})
+
+	testRequest := httptest.NewRequest("GET", "http://localhost/testpriority/12345", nil)
+	responseWriter := httptest.NewRecorder()
+	mockery.ServeHTTP(responseWriter, testRequest)
+	response := responseWriter.Result()
+
+	assert.Equal(t, 200, response.StatusCode)
+
+	data, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	var f interface{}
+	err = json.Unmarshal(data, &f)
+	assert.NoError(t, err)
+	js, ok := f.(map[string]interface{})
+	assert.True(t, ok)
+	assert.Equal(t,"priority100", js["key"])
+
+	testRequest = httptest.NewRequest("GET", "http://localhost/testpriority/23451", nil)
+	responseWriter = httptest.NewRecorder()
+	mockery.ServeHTTP(responseWriter, testRequest)
+	response = responseWriter.Result()
+
+	assert.Equal(t, 200, response.StatusCode)
+
+	data, err = ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	err = json.Unmarshal(data, &f)
+	assert.NoError(t, err)
+	js, ok = f.(map[string]interface{})
+	assert.True(t,ok)
+	assert.Equal(t,"priority101", js["key"])
+}

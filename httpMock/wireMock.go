@@ -38,6 +38,7 @@ type wireMockResponse struct {
 }
 
 type wireMock struct {
+	Priority *int
 	Request  wireMockRequest
 	Response wireMockResponse
 }
@@ -80,7 +81,11 @@ func WireMockEndpoint(dataDirName, fileName string) {
 	if wm.Request.Method != "" {
 		predicates = append(predicates, MethodIs(wm.Request.Method))
 	}
-	EndpointForCondition(And(predicates...), func() {
+	priority := DEFAULT_PRIORITY
+	if wm.Priority != nil {
+		priority = *wm.Priority
+	}
+	EndpointForConditionWithPriority(priority, And(predicates...), func() {
 		if wm.Response.Headers != nil {
 			for k, v := range wm.Response.Headers {
 				Header(k, v.(string))
