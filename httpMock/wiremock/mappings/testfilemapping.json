@@ -1,0 +1,13 @@
+{
+    "request": {
+        "method": "GET",
+        "urlPattern": "/testfilemapping"
+    },
+    "response": {
+        "status": 200,
+        "bodyFileName": "testPayload.txt",
+        "headers": {
+            "Content-Type": "text/plain"
+        }
+    }
+}

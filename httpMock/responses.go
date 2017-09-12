@@ -14,7 +14,7 @@ func WriteStatusAndBody(status int, body interface{}) {
 		var err error
 		bytes, err = json.Marshal(body)
 		if err != nil {
-			panic("unable to marshal body to json!")
+			panic("unable to marshal Body to json!")
 		}
 		contentType = "application/json"
 	}

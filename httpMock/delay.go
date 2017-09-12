@@ -20,6 +20,12 @@ type fixedDelay struct {
 	delay time.Duration
 }
 
+type uniformDelay struct {
+	delayBase
+	min time.Duration
+	max time.Duration
+}
+
 type normalDelay struct {
 	delayBase
 	mean   time.Duration
@@ -30,11 +36,26 @@ type normalDelay struct {
 func FixedDelay(d string) {
 	dd, err := time.ParseDuration(d)
 	if err != nil {
-		panic(fmt.Sprintf("Parsing time for FixedDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
+		panic(fmt.Sprintf("Parsing time for FixedDelay. error = %s", err.Error()))
 	}
 	fd := fixedDelay{delayBase: delayBase{}, delay: dd}
 	fd.waiter = &fd
 	DecorateHandler(&fd, NoopHandler)
+}
+
+func UniformDelay(min, max string) {
+	var ud uniformDelay
+	var err error
+	ud.min, err = time.ParseDuration(min)
+	if err != nil {
+		panic(fmt.Sprintf("Parsing min for UniformDelay in error = %s", err.Error()))
+	}
+	ud.max, err = time.ParseDuration(max)
+	if err != nil {
+		panic(fmt.Sprintf("Parsing max for UniformDelay in error = %s", err.Error()))
+	}
+	ud.waiter = &ud
+	DecorateHandler(&ud, NoopHandler)
 }
 
 func NormalDelay(mean, stdDev, max string) {
@@ -43,21 +64,26 @@ func NormalDelay(mean, stdDev, max string) {
 	var err error
 	nd.mean, err = time.ParseDuration(mean)
 	if err != nil {
-		panic(fmt.Sprintf("Parsing mean for NormalDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
+		panic(fmt.Sprintf("Parsing mean for NormalDelay in error = %s", err.Error()))
 	}
 	nd.stdDev, err = time.ParseDuration(stdDev)
 	if err != nil {
-		panic(fmt.Sprintf("Parsing stdDev for NormalDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
+		panic(fmt.Sprintf("Parsing stdDev for NormalDelay in error = %s", err.Error()))
 	}
 	nd.max, err = time.ParseDuration(max)
 	if err != nil {
-		panic(fmt.Sprintf("Parsing max for NormalDelay in %s:%s error = %s", currentMock.url, currentMockMethod.method, err.Error()))
+		panic(fmt.Sprintf("Parsing max for NormalDelay in error = %s", err.Error()))
 	}
 	DecorateHandler(&nd, NoopHandler)
 }
 
 func (fd *fixedDelay) Wait() error {
 	time.Sleep(fd.delay)
+	return nil
+}
+
+func (ud *uniformDelay) Wait() error {
+	time.Sleep(ud.min + time.Duration(rand.Intn(int(ud.max-ud.min))))
 	return nil
 }
 

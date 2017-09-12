@@ -14,9 +14,9 @@ func TestWhen(t *testing.T) {
 	handler := Mockery(func() {
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
-				When(func(r *http.Request) bool {
-					return r.Header.Get("Accept") == "application/json"
-				}, func() {
+				When(PredicateFunc(func(r interface{}) bool {
+					return r.(*http.Request).Header.Get("Accept") == "application/json"
+				}), func() {
 					RespondWithFile(200, "./ok.json")
 					Header("Content-Type", "application/json")
 				}, func() {
@@ -51,18 +51,18 @@ func TestSwitch(t *testing.T) {
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
 				Header("Foo", "Bar")
-				Switch(func(r *http.Request) interface{} {
-					return r.Header.Get("Accept")
-				}, func() {
-					Case(func(acceptHeader interface{}) bool {
-						return acceptHeader == "application/json"
-					}, func() {
+				Switch(ExtractorFunc(func(r interface{}) interface{} {
+					return r.(*http.Request).Header.Get("Accept")
+				}), func() {
+					Case(PredicateFunc(func(acceptHeader interface{}) bool {
+						return acceptHeader.(string) == "application/json"
+					}), func() {
 						RespondWithFile(200, "./ok.json")
 						Header("Content-Type", "application/json")
 					})
-					Case(func(acceptHeader interface{}) bool {
-						return acceptHeader == "application/xml"
-					}, func() {
+					Case(PredicateFunc(func(acceptHeader interface{}) bool {
+						return acceptHeader.(string) == "application/xml"
+					}), func() {
 						RespondWithFile(200, "./ok.xml")
 						Header("Content-Type", "application/xml")
 					})
@@ -107,15 +107,15 @@ func TestSwitch(t *testing.T) {
 func TestExtractXPathString(t *testing.T) {
 	xml := `<foo><bar snafu="fubar"></bar></foo>`
 	path := "/foo/bar/@snafu"
-	result := ExtractXPathString(path)(&http.Request{Body: ioutil.NopCloser(strings.NewReader(xml))})
+	result := ExtractXPathString(path).Extract(&http.Request{Body: ioutil.NopCloser(strings.NewReader(xml))})
 	assert.Equal(t, "fubar", result)
 }
 
 func TestExtractQueryParameter(t *testing.T) {
 	request := &http.Request{URL: &url.URL{RawQuery: "foo=bar&snafu=fubar"}}
-	result := ExtractQueryParameter("foo")(request)
+	result := ExtractQueryParameter("foo").Extract(request)
 	assert.Equal(t, "bar", result)
-	result = ExtractQueryParameter("snafu")(request)
+	result = ExtractQueryParameter("snafu").Extract(request)
 	assert.Equal(t, "fubar", result)
 }
 
@@ -123,33 +123,33 @@ func TestExtractPathElementByIndex(t *testing.T) {
 
 	url, _ := url.Parse("http://localhost/foo/bar/snafu")
 	request := &http.Request{URL: url}
-	result := ExtractPathElementByIndex(-1)(request)
+	result := ExtractPathElementByIndex(-1).Extract(request)
 	assert.Equal(t, "snafu", result)
 
-	result = ExtractPathElementByIndex(-2)(request)
+	result = ExtractPathElementByIndex(-2).Extract(request)
 	assert.Equal(t, "bar", result)
 
-	result = ExtractPathElementByIndex(-3)(request)
+	result = ExtractPathElementByIndex(-3).Extract(request)
 	assert.Equal(t, "foo", result)
 
-	result = ExtractPathElementByIndex(-4)(request)
+	result = ExtractPathElementByIndex(-4).Extract(request)
 	assert.Equal(t, "", result)
 
-	result = ExtractPathElementByIndex(4)(request)
+	result = ExtractPathElementByIndex(4).Extract(request)
 	assert.Equal(t, "", result)
 
-	result = ExtractPathElementByIndex(3)(request)
+	result = ExtractPathElementByIndex(3).Extract(request)
 	assert.Equal(t, "snafu", result)
 
-	result = ExtractPathElementByIndex(2)(request)
+	result = ExtractPathElementByIndex(2).Extract(request)
 	assert.Equal(t, "bar", result)
 
-	result = ExtractPathElementByIndex(1)(request)
+	result = ExtractPathElementByIndex(1).Extract(request)
 	assert.Equal(t, "foo", result)
 }
 
 func TestRequestKeyStringMatches(t *testing.T) {
 	key := "foo"
-	assert.False(t, RequestKeyStringMatches("\\d+")(key))
-	assert.True(t, RequestKeyStringMatches("[a-z]+")(key))
+	assert.False(t, RequestKeyStringMatches("\\d+").Accept(key))
+	assert.True(t, RequestKeyStringMatches("[a-z]+").Accept(key))
 }

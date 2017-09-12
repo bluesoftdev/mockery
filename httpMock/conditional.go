@@ -7,43 +7,139 @@ import (
 	"strings"
 )
 
-// RequestPredicate is a function that takes a request and returns true or false.
-type RequestPredicate func(*http.Request) bool
-
-// RequestPredicateTrue is a function that takeas all requests.
-var RequestPredicateTrue RequestPredicate = func(r *http.Request) bool {
-	return true
+type Predicate interface {
+	Accept(interface{}) bool
 }
 
-// RequestKeySupplier is a function that extracts a key from a request.  For instance a RequestKeySupplier could
+type PredicateFunc func(interface{}) bool
+
+func (pf PredicateFunc) Accept(v interface{}) bool {
+	return pf(v)
+}
+
+func And(predicates ...Predicate) Predicate {
+	return PredicateFunc(func(v interface{}) bool {
+		for _, p := range predicates {
+			if !p.Accept(v) {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+func Or(predicates ...Predicate) Predicate {
+	return PredicateFunc(func(v interface{}) bool {
+		for _, p := range predicates {
+			if p.Accept(v) {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+var TruePredicate Predicate = PredicateFunc(func(v interface{}) bool { return true })
+var FalsePredicate Predicate = PredicateFunc(func(v interface{}) bool { return false })
+
+type Extractor interface {
+	Extract(interface{}) interface{}
+}
+
+type ExtractorFunc func(interface{}) interface{}
+
+func (ef ExtractorFunc) Extract(v interface{}) interface{} {
+	return ef(v)
+}
+
+// RequestPredicate is a function that takes a Request and returns true or false.
+type RequestPredicate Predicate
+
+func StringEquals(value string) Predicate {
+	return PredicateFunc(func(s interface{}) bool {
+		return s.(string) == value
+	})
+}
+
+func StringStartsWith(value string) Predicate {
+	return PredicateFunc(func(s interface{}) bool {
+		return strings.HasSuffix(s.(string), value)
+	})
+}
+
+func StringMatches(regex *regexp.Regexp) Predicate {
+	return PredicateFunc(func(s interface{}) bool {
+		return regex.MatchString(s.(string))
+	})
+}
+
+func ExtractedValueAccepted(extractor Extractor, predicate Predicate) Predicate {
+	return PredicateFunc(func(v interface{}) bool {
+		return predicate.Accept(extractor.Extract(v))
+	})
+}
+
+// RequestKeySupplier is a function that extracts a key from a Request.  For instance a RequestKeySupplier could
 // return the value of a query parameter or a header.
-type RequestKeySupplier func(*http.Request) interface{}
+type RequestKeySupplier Extractor
 
-// RequestKeyIdentity is a RequestKeySupplier that returns the entire request.
-var RequestKeyIdentity RequestKeySupplier = func(r *http.Request) interface{} {
+// RequestKeyIdentity is a RequestKeySupplier that returns the entire Request.
+var IdentityExtractor RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
 	return r
+})
+
+var MethodExtractor RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+	return r.(*http.Request).Method
+})
+
+func PathMatches(pathRegex *regexp.Regexp) RequestPredicate {
+	return ExtractedValueAccepted(ExtractPath, StringMatches(pathRegex))
 }
 
-// ExtractXPathString returns a RequestKeySupplier that uses XPATH expression to extract a string from the body of the
-// request.
+func PathEquals(path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractPath, StringEquals(path))
+}
+
+func PathStartsWith(path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractPath, StringStartsWith(path))
+}
+
+func MethodIs(method string) RequestPredicate {
+	return ExtractedValueAccepted(MethodExtractor, StringEquals(method))
+}
+
+func QueryParamEquals(name, value string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractQueryParameter(name), StringEquals(value))
+}
+
+func QueryParamMatches(name string, pattern *regexp.Regexp) RequestPredicate {
+	return ExtractedValueAccepted(ExtractQueryParameter(name), StringMatches(pattern))
+}
+
+var ExtractPath RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+	return r.(*http.Request).URL.Path
+})
+
+// ExtractXPathString returns a RequestKeySupplier that uses XPATH expression to extract a string from the Body of the
+// Request.
 func ExtractXPathString(xpath string) RequestKeySupplier {
 	path := xmlpath.MustCompile(xpath)
-	return func(r *http.Request) interface{} {
+	return ExtractorFunc(func(r interface{}) interface{} {
 		str := ""
-		root, err := xmlpath.Parse(r.Body)
+		root, err := xmlpath.Parse(r.(*http.Request).Body)
 		if err == nil {
 			str, _ = path.String(root)
 		}
 		return str
-	}
+	})
 }
 
 // ExtractPathElementByIndex returns a RequestKeySupplier that extracts the path element at the given position.  A
 // negative number denotes a position from the end (starting at 1 e.g. -1 is the last element in the path).  For
 // positive inputs, the counting starts at 1 as well.
 func ExtractPathElementByIndex(idx int) RequestKeySupplier {
-	return func(r *http.Request) interface{} {
-		elements := strings.Split(r.URL.Path, "/")
+	return ExtractorFunc(func(r interface{}) interface{} {
+		elements := strings.Split(r.(*http.Request).URL.Path, "/")
 		var i int
 		if idx < 0 {
 			i = len(elements) + idx
@@ -54,35 +150,35 @@ func ExtractPathElementByIndex(idx int) RequestKeySupplier {
 			return ""
 		}
 		return elements[i]
-	}
+	})
 }
 
 // ExtractQueryParameter returns a RequestKeySupplier that extracts a query parameters value.
 func ExtractQueryParameter(name string) RequestKeySupplier {
-	return func(r *http.Request) interface{} {
-		return r.URL.Query().Get(name)
-	}
+	return ExtractorFunc(func(r interface{}) interface{} {
+		return r.(*http.Request).URL.Query().Get(name)
+	})
 }
 
 // RequestKeyPredicate is a function that takes a Request Key provided by a RequestKeyProvider and returns either true
 // or false.
-type RequestKeyPredicate func(interface{}) bool
+type RequestKeyPredicate Predicate
 
 // RequestKeyStringEquals returns a function that will compare the a RequestKey to the string provided and return true
 // if the strings are equal.
 func RequestKeyStringEquals(str string) RequestKeyPredicate {
-	return func(key interface{}) bool {
+	return PredicateFunc(func(key interface{}) bool {
 		return key.(string) == str
-	}
+	})
 }
 
 // RequestKeyStringEquals returns a function that will compare the a RequestKey to the regex provided and return true
 // if the string matches.
 func RequestKeyStringMatches(regexStr string) RequestKeyPredicate {
 	regex := regexp.MustCompile(regexStr)
-	return func(key interface{}) bool {
+	return PredicateFunc(func(key interface{}) bool {
 		return regex.MatchString(key.(string))
-	}
+	})
 }
 
 type when struct {
@@ -91,22 +187,22 @@ type when struct {
 	falseResponse http.Handler
 }
 
-// When can be used within a Method's config function to conditionally choose one response or another.
+// When can be used within a Method's config function to conditionally choose one Response or another.
 func When(predicate RequestPredicate, trueResponseBuilder func(), falseResponseBuilder func()) {
 
-	outerMockMethodHandler := currentMockMethodHandler
+	outerMockMethodHandler := currentMockHandler
 	trueResponseBuilder()
-	trueMockMethod := currentMockMethodHandler
+	trueMockMethod := currentMockHandler
 
-	currentMockMethodHandler = outerMockMethodHandler
+	currentMockHandler = outerMockMethodHandler
 	falseResponseBuilder()
-	falseMockMethod := currentMockMethodHandler
+	falseMockMethod := currentMockHandler
 
-	currentMockMethodHandler = &when{predicate, trueMockMethod, falseMockMethod}
+	currentMockHandler = &when{predicate, trueMockMethod, falseMockMethod}
 }
 
 func (wh *when) ServeHTTP(w http.ResponseWriter, request *http.Request) {
-	if wh.predicate(request) {
+	if wh.predicate.Accept(request) {
 		wh.trueResponse.ServeHTTP(w, request)
 	} else {
 		wh.falseResponse.ServeHTTP(w, request)
@@ -125,9 +221,9 @@ type switchCaseSet struct {
 }
 
 func (scs *switchCaseSet) ServeHTTP(w http.ResponseWriter, request *http.Request) {
-	key := scs.keySupplier(request)
+	key := scs.keySupplier.Extract(request)
 	for _, sc := range scs.switchCases {
-		if sc.predicate(key) {
+		if sc.predicate.Accept(key) {
 			sc.response.ServeHTTP(w, request)
 			return
 		}
@@ -138,40 +234,37 @@ func (scs *switchCaseSet) ServeHTTP(w http.ResponseWriter, request *http.Request
 var currentSwitch *switchCaseSet
 
 // Switch con be used within a Method's config function to conditionally choose one of many possible responses.  The
-// first Case whose predicate returns true will be selected.  Otherwise the response defined in the Default is used.
-// If there is no Default, then 404 is returned with an empty body.
+// first Case whose predicate returns true will be selected.  Otherwise the Response defined in the Default is used.
+// If there is no Default, then 404 is returned with an empty Body.
 func Switch(keySupplier RequestKeySupplier, cases func()) {
-	handler := currentMockMethodHandler
+	handler := currentMockHandler
 	currentSwitch = &switchCaseSet{
-		keySupplier:    keySupplier,
-		switchCases:    make([]*switchCase, 0, 10),
+		keySupplier: keySupplier,
+		switchCases: make([]*switchCase, 0, 10),
 		defaultHandler: http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-			handler.ServeHTTP(w,request)
+			handler.ServeHTTP(w, request)
 			w.WriteHeader(404)
 		}),
 	}
 	cases()
-	currentMockMethodHandler = currentSwitch
+	currentMockHandler = currentSwitch
 }
 
-// Case used within a Switch to define a response that will be returned if the case's predicate is true.  The order of
+// Case used within a Switch to define a Response that will be returned if the case's predicate is true.  The order of
 // the case calls matter as the first to match will be used.
 func Case(predicate RequestKeyPredicate, responseBuilder func()) {
-	if currentMockMethod == nil {
-		panic("Switch must be inside a method.")
-	}
-	outerMockMethodHandler := currentMockMethodHandler
+	outerMockMethodHandler := currentMockHandler
 	responseBuilder()
-	responseMockMethod := currentMockMethodHandler
+	responseMockMethod := currentMockHandler
 	if predicate != nil {
 		currentSwitch.switchCases = append(currentSwitch.switchCases, &switchCase{predicate, responseMockMethod})
 	} else {
 		currentSwitch.defaultHandler = responseMockMethod
 	}
-	currentMockMethodHandler = outerMockMethodHandler
+	currentMockHandler = outerMockMethodHandler
 }
 
-// Default used to define the response that will be returned when no other case is triggered.  The default can be placed
+// Default used to define the Response that will be returned when no other case is triggered.  The default can be placed
 // anywhere but there can only be one.
 func Default(responseBuilder func()) {
 	Case(nil, responseBuilder)
