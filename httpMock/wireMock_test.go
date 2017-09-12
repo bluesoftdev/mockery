@@ -56,6 +56,11 @@ func TestWireMockEndpointsJsonMapping(t *testing.T) {
 	var f interface{}
 	err = json.Unmarshal(data, &f)
 	assert.NoError(t, err)
-	js := f.(map[string]interface{})
-	assert.Equal(t, "value", js["key"])
+	js := f.([]interface{})
+	js0, ok := js[0].(map[string]interface{})
+	assert.True(t, ok)
+	assert.Equal(t, "value", js0["key"])
+	js1, ok := js[1].(map[string]interface{})
+	assert.True(t, ok)
+	assert.Equal(t, "value2", js1["key"])
 }

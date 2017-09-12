@@ -29,7 +29,7 @@ type wireMockResponse struct {
 	Headers       map[string]interface{}
 
 	Body         string
-	JsonBody     map[string]interface{}
+	JsonBody     interface{}
 	Base64Body   string
 	BodyFileName string
 

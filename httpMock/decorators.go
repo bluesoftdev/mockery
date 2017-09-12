@@ -24,7 +24,7 @@ func Trailer(name, value string) {
 	}))
 }
 
-func RespondWithJson(status int, jsonBody map[string]interface{} ) {
+func RespondWithJson(status int, jsonBody interface{} ) {
 	var data bytes.Buffer
 	json.NewEncoder(&data).Encode(jsonBody)
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
