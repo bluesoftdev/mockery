@@ -8,6 +8,11 @@
         "bodyFileName": "testPayload.txt",
         "headers": {
             "Content-Type": "text/plain"
+        },
+        "delayDistribution": {
+            "type": "lognormal",
+            "median": 100,
+            "sigma": 0.2
         }
     }
 }

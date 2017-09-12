@@ -9,5 +9,6 @@
         "headers": {
             "Content-Type": "text/plain"
         }
-    }
+    },
+    "fixedDelayInMilliSeconds": 100
 }

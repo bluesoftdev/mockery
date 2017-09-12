@@ -100,7 +100,7 @@ func WireMockEndpoint(dataDirName, fileName string) {
 				stddev := wm.Response.DelayDistribution.Sigma * float64(wm.Response.DelayDistribution.Median)
 				NormalDelay(
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Median),
-					fmt.Sprintf("%dms", stddev),
+					fmt.Sprintf("%dms", int(stddev)),
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Median+int(stddev*5.0)))
 			} else if wm.Response.DelayDistribution.Algorithm == "uniform" {
 				UniformDelay(
