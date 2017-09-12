@@ -8,11 +8,26 @@ import (
 	"regexp"
 )
 
+type wireMockValueCondition struct {
+	EqualTo         string
+	CaseInsensitive *bool
+	BinaryEqualTo   string
+	Contains        string
+	Matches         string
+	DoesNotMatch    string
+	//EqualToJson interface{}
+	//IgnoreArrayOrder bool
+	//IgnoreExtraElements bool
+}
+
 type wireMockRequest struct {
-	Method         string
-	Url            string `json:"url"`
-	UrlPath        string `json:"urlPath"`
-	UrlPathPattern string `json:"urlPattern"`
+	Method          string
+	Url             string `json:"url"`
+	UrlPattern      string `json:"urlPattern"`
+	UrlPath         string `json:"urlPath"`
+	UrlPathPattern  string `json:"urlPathPattern"`
+	Headers         map[string]wireMockValueCondition
+	QueryParameters map[string]wireMockValueCondition
 }
 
 type wireMockDelayDistribution struct {
@@ -72,14 +87,58 @@ func WireMockEndpoint(dataDirName, fileName string) {
 	}
 	predicates := make([]Predicate, 0, 10)
 	if wm.Request.Url != "" {
-		predicates = append(predicates, PathEquals(wm.Request.Url))
+		predicates = append(predicates, RequestURIEquals(wm.Request.Url))
+	} else if wm.Request.UrlPattern != "" {
+		predicates = append(predicates, RequestURIMatches(regexp.MustCompile(wm.Request.UrlPattern)))
 	} else if wm.Request.UrlPath != "" {
-		predicates = append(predicates, PathStartsWith(wm.Request.UrlPath))
+		predicates = append(predicates, PathEquals(wm.Request.UrlPath))
 	} else if wm.Request.UrlPathPattern != "" {
 		predicates = append(predicates, PathMatches(regexp.MustCompile(wm.Request.UrlPathPattern)))
 	}
 	if wm.Request.Method != "" {
 		predicates = append(predicates, MethodIs(wm.Request.Method))
+	}
+	if wm.Request.Headers != nil {
+		for header, condition := range wm.Request.Headers {
+			if condition.EqualTo != "" {
+				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
+					predicates = append(predicates, HeaderEqualsIgnoreCase(header, condition.EqualTo))
+				} else {
+					predicates = append(predicates, HeaderEquals(header, condition.EqualTo))
+				}
+			} else if condition.Contains != "" {
+				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
+					predicates = append(predicates, HeaderContainsIgnoreCase(header, condition.Contains))
+				} else {
+					predicates = append(predicates, HeaderContains(header, condition.Contains))
+				}
+			} else if condition.Matches != "" {
+				predicates = append(predicates, HeaderMatches(header, regexp.MustCompile(condition.Matches)))
+			} else if condition.DoesNotMatch != "" {
+				predicates = append(predicates, Not(HeaderMatches(header, regexp.MustCompile(condition.Matches))))
+			}
+		}
+	}
+	if wm.Request.QueryParameters != nil {
+		for query, condition := range wm.Request.QueryParameters {
+			if condition.EqualTo != "" {
+				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
+					predicates = append(predicates, QueryParamEqualsIgnoreCase(query, condition.EqualTo))
+				} else {
+					predicates = append(predicates, QueryParamEquals(query, condition.EqualTo))
+				}
+			} else if condition.Contains != "" {
+				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
+					predicates = append(predicates, QueryParamContainsIgnoreCase(query, condition.Contains))
+				} else {
+					predicates = append(predicates, QueryParamContains(query, condition.Contains))
+				}
+			} else if condition.Matches != "" {
+				predicates = append(predicates, QueryParamMatches(query, regexp.MustCompile(condition.Matches)))
+			} else if condition.DoesNotMatch != "" {
+				predicates = append(predicates, Not(QueryParamMatches(query, regexp.MustCompile(condition.Matches))))
+			}
+		}
 	}
 	priority := DEFAULT_PRIORITY
 	if wm.Priority != nil {

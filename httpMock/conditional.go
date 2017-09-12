@@ -39,6 +39,12 @@ func Or(predicates ...Predicate) Predicate {
 	})
 }
 
+func Not(predicate Predicate) Predicate {
+	return PredicateFunc(func(v interface{}) bool {
+		return !predicate.Accept(v)
+	})
+}
+
 var TruePredicate Predicate = PredicateFunc(func(v interface{}) bool { return true })
 var FalsePredicate Predicate = PredicateFunc(func(v interface{}) bool { return false })
 
@@ -58,6 +64,12 @@ type RequestPredicate Predicate
 func StringEquals(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
 		return s.(string) == value
+	})
+}
+
+func StringContains(value string) Predicate {
+	return PredicateFunc(func(s interface{}) bool {
+		return strings.Contains(s.(string),value)
 	})
 }
 
@@ -110,6 +122,42 @@ func PathStartsWith(path string) RequestPredicate {
 	return ExtractedValueAccepted(ExtractPath, StringStartsWith(path))
 }
 
+func HeaderMatches(name string, pathRegex *regexp.Regexp) RequestPredicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringMatches(pathRegex))
+}
+
+func HeaderEquals(name string, path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringEquals(path))
+}
+
+func HeaderEqualsIgnoreCase(name string, path string) RequestPredicate {
+	return ExtractedValueAccepted(UpperCaseExtractor(ExtractHeader(name)), StringEquals(strings.ToUpper(path)))
+}
+
+func HeaderContains(name string, path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringContains(path))
+}
+
+func HeaderContainsIgnoreCase(name string, path string) RequestPredicate {
+	return ExtractedValueAccepted(UpperCaseExtractor(ExtractHeader(name)), StringContains(strings.ToUpper(path)))
+}
+
+func HeaderStartsWith(name string, path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringStartsWith(path))
+}
+
+func RequestURIMatches(pathRegex *regexp.Regexp) RequestPredicate {
+	return ExtractedValueAccepted(ExtractRequestURI, StringMatches(pathRegex))
+}
+
+func RequestURIEquals(path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractRequestURI, StringEquals(path))
+}
+
+func RequestURIStartsWith(path string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractRequestURI, StringStartsWith(path))
+}
+
 func MethodIs(method string) RequestPredicate {
 	return ExtractedValueAccepted(MethodExtractor, StringEquals(method))
 }
@@ -118,10 +166,21 @@ func QueryParamEquals(name, value string) RequestPredicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringEquals(value))
 }
 
+func QueryParamEqualsIgnoreCase(name, value string) RequestPredicate {
+	return ExtractedValueAccepted(UpperCaseExtractor(ExtractQueryParameter(name)), StringEquals(strings.ToUpper(value)))
+}
+
+func QueryParamContains(name, value string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractQueryParameter(name), StringContains(value))
+}
+
+func QueryParamContainsIgnoreCase(name, value string) RequestPredicate {
+	return ExtractedValueAccepted(UpperCaseExtractor(ExtractQueryParameter(name)), StringContains(strings.ToUpper(value)))
+}
+
 func QueryParamMatches(name string, pattern *regexp.Regexp) RequestPredicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringMatches(pattern))
 }
-
 func QueryParamStartsWith(name string, prefix string) RequestPredicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringStartsWith(prefix))
 }
@@ -129,6 +188,21 @@ func QueryParamStartsWith(name string, prefix string) RequestPredicate {
 var ExtractPath RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
 	return r.(*http.Request).URL.Path
 })
+
+var ExtractRequestURI RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+	return r.(*http.Request).URL.RequestURI()
+})
+
+func ExtractHeader(name string) RequestKeySupplier {
+	return ExtractorFunc(func(r interface{}) interface{} {
+		return r.(*http.Request).Header.Get(name)
+	})
+}
+func UpperCaseExtractor(extractor Extractor) Extractor {
+	return ExtractorFunc(func(v interface{}) interface{} {
+		return strings.ToUpper(extractor.Extract(v).(string))
+	})
+}
 
 // ExtractXPathString returns a RequestKeySupplier that uses XPATH expression to extract a string from the Body of the
 // Request.

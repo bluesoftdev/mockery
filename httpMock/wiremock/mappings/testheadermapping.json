@@ -1,0 +1,22 @@
+{
+  "priority": 100,
+  "request": {
+    "method": "GET",
+    "urlPattern": "/testheadermapping.*",
+    "headers": {
+      "Accept": {
+        "contains": "application/json",
+        "caseInsensitive": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "key": "priority100"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

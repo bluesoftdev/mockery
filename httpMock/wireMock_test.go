@@ -102,3 +102,25 @@ func TestWireMockEndpointsPriorities(t *testing.T) {
 	assert.True(t,ok)
 	assert.Equal(t,"priority101", js["key"])
 }
+
+func TestWireMockEndpointsHeaderMatching(t *testing.T) {
+	mockery := Mockery(func() {
+		WireMockEndpoints("./wiremock")
+	})
+
+	testRequest := httptest.NewRequest("GET", "http://localhost/testheadermapping", nil)
+	testRequest.Header.Add("Accept","application/xml;encoding=utf-8")
+	responseWriter := httptest.NewRecorder()
+	mockery.ServeHTTP(responseWriter, testRequest)
+	response := responseWriter.Result()
+
+	assert.Equal(t, 404, response.StatusCode)
+
+	testRequest = httptest.NewRequest("GET", "http://localhost/testheadermapping", nil)
+	testRequest.Header.Add("Accept","application/json;encoding=utf-8")
+	responseWriter = httptest.NewRecorder()
+	mockery.ServeHTTP(responseWriter, testRequest)
+	response = responseWriter.Result()
+
+	assert.Equal(t, 200, response.StatusCode)
+}
