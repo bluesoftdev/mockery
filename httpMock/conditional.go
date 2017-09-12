@@ -63,6 +63,12 @@ func StringEquals(value string) Predicate {
 
 func StringStartsWith(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
+		return strings.HasPrefix(s.(string), value)
+	})
+}
+
+func StringEndsWith(value string) Predicate {
+	return PredicateFunc(func(s interface{}) bool {
 		return strings.HasSuffix(s.(string), value)
 	})
 }
@@ -114,6 +120,10 @@ func QueryParamEquals(name, value string) RequestPredicate {
 
 func QueryParamMatches(name string, pattern *regexp.Regexp) RequestPredicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringMatches(pattern))
+}
+
+func QueryParamStartsWith(name string, prefix string) RequestPredicate {
+	return ExtractedValueAccepted(ExtractQueryParameter(name), StringStartsWith(prefix))
 }
 
 var ExtractPath RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
