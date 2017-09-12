@@ -29,7 +29,7 @@ func TestWireMockEndpointsFileMapping(t *testing.T) {
 		WireMockEndpoints("./wiremock")
 	})
 
-	testRequest := httptest.NewRequest("GET", "http://localhost/testfilemapping", nil)
+	testRequest := httptest.NewRequest("GET", "http://localhost/testfilemapping?foo=bar", nil)
 	responseWriter := httptest.NewRecorder()
 	mockery.ServeHTTP(responseWriter, testRequest)
 	response := responseWriter.Result()
@@ -38,6 +38,22 @@ func TestWireMockEndpointsFileMapping(t *testing.T) {
 	body, err := ioutil.ReadAll(response.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("Testing...\n"), body)
+}
+
+func TestWireMockEndpointsFileMapping2(t *testing.T) {
+	mockery := Mockery(func() {
+		WireMockEndpoints("./wiremock")
+	})
+
+	testRequest := httptest.NewRequest("POST", "http://localhost/testfilemapping?foo=bar", nil)
+	responseWriter := httptest.NewRecorder()
+	mockery.ServeHTTP(responseWriter, testRequest)
+	response := responseWriter.Result()
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Equal(t, "text/plain", response.Header.Get("Content-Type"))
+	body, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("Testing POST...\n"), body)
 }
 
 func TestWireMockEndpointsJsonMapping(t *testing.T) {
