@@ -90,13 +90,13 @@ func TestNormalDelay(t *testing.T) {
 
 	p975, err := population.Percentile(97.5)
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(time.Millisecond+400*time.Microsecond), p975, 10*float64(time.Microsecond))
+	assert.InDelta(t, float64(time.Millisecond+450*time.Microsecond), p975, 10*float64(time.Microsecond))
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(time.Millisecond+600*time.Microsecond), p9985, 10*float64(time.Microsecond))
+	assert.InDelta(t, float64(time.Millisecond+760*time.Microsecond), p9985, 10*float64(time.Microsecond))
 
-	buckets := makeBuckets(100, 2*time.Millisecond, 0*time.Microsecond)
+	buckets := makeBuckets(50, 2*time.Millisecond, 0*time.Microsecond)
 	histogram := makeHistogram(buckets, samples)
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
@@ -129,9 +129,9 @@ func TestNormalDelay2(t *testing.T) {
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(1960*time.Microsecond), p9985, 10*float64(time.Microsecond))
+	assert.InDelta(t, float64(1960*time.Microsecond), p9985, 100*float64(time.Microsecond))
 
-	buckets := makeBuckets(200, 400*time.Microsecond, 0*time.Millisecond)
+	buckets := makeBuckets(50, 1000*time.Microsecond, 0*time.Millisecond)
 	histogram := makeHistogram(buckets, samples)
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
