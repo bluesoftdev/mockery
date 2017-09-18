@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/mockery/httpmock/wiremock"
 )
 
 func TestWireMockEndpoints(t *testing.T) {

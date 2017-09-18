@@ -1,9 +1,10 @@
 package wiremock
 
 import (
+	. "github.com/bluesoftdev/mockery/httpmock"
+
 	"encoding/json"
 	"fmt"
-	. "github.com/danapsimer/mockery/httpmock"
 	"io/ioutil"
 	"os"
 	"regexp"
