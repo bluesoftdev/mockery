@@ -1,9 +1,11 @@
-package httpMock
+package httpmock
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/montanaflynn/stats"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"math"
 	"testing"
 	"time"
@@ -39,9 +41,9 @@ func makeBuckets(size int, max, start time.Duration) []time.Duration {
 	return buckets
 }
 
-var fractionalBlocks = []rune(" \u258F\u258E\u258D\u258C\u258B\u258A\u2589")
+var fractionalBlocks = []rune(" \u258F\u258E\u258D\u258C\u258B\u258A\u2589\u2588")
 
-func printHistogram(buckets []time.Duration, histo []int, maxWidth int) {
+func printHistogram(w io.Writer, buckets []time.Duration, histo []int, maxWidth int) {
 	var max int
 	for _, h := range histo {
 		if h > max {
@@ -51,23 +53,23 @@ func printHistogram(buckets []time.Duration, histo []int, maxWidth int) {
 	scale := float64(maxWidth) / float64(max)
 	for i := range histo {
 		if i < len(buckets) {
-			fmt.Printf(" %-8s: ", buckets[i].String())
+			io.WriteString(w, fmt.Sprintf(" %-8s: ", buckets[i].String()))
 		} else {
-			fmt.Printf(">%-8s: ", buckets[len(buckets)-1].String())
+			io.WriteString(w, fmt.Sprintf(">%-8s: ", buckets[len(buckets)-1].String()))
 		}
 		blocksCalc := scale * float64(histo[i])
 		blocks := int(math.Floor(blocksCalc))
-		blocksFractionValue := int(math.Floor((blocksCalc - float64(blocks)) / 0.125))
+		blocksFractionValue := int(math.Ceil((blocksCalc - float64(blocks)) / 0.125))
 		for i = 0; i < blocks; i++ {
-			fmt.Print("\u2588")
+			io.WriteString(w, "\u2588")
 		}
-		fmt.Print(string(fractionalBlocks[blocksFractionValue]))
-		fmt.Print("\n")
+		io.WriteString(w, string(fractionalBlocks[blocksFractionValue]))
+		io.WriteString(w, "\n")
 	}
 }
 
 func TestNormalDelay(t *testing.T) {
-	nd := normalDelay{mean: time.Millisecond, stdDev: 200 * time.Microsecond, max: 2 * time.Millisecond}
+	nd := normalDelay{mean: 0.001, stdDev: 0.0002, max: 0.002}
 	samples := make([]time.Duration, 0, 100000)
 	for i := 0; i < 100000; i++ {
 		samples = append(samples, nd.NextWaitTime())
@@ -96,5 +98,42 @@ func TestNormalDelay(t *testing.T) {
 
 	buckets := makeBuckets(100, 2*time.Millisecond, 0*time.Microsecond)
 	histogram := makeHistogram(buckets, samples)
-	printHistogram(buckets, histogram, 40)
+	sw := bytes.NewBuffer(make([]byte, 0, 512))
+	printHistogram(sw, buckets, histogram, 40)
+	t.Logf("\n%s", sw.String())
+}
+
+func TestNormalDelay2(t *testing.T) {
+	nd := normalDelay{mean: 0.0001, stdDev: 0.0002, max: 0.001}
+	samples := make([]time.Duration, 0, 100000)
+	for i := 0; i < 100000; i++ {
+		samples = append(samples, nd.NextWaitTime())
+	}
+	population := stats.LoadRawData(samples)
+
+	mean, err := population.Mean()
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(100*time.Microsecond), mean, 10*float64(time.Microsecond))
+
+	median, err := population.Median()
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(100*time.Microsecond), median, 100*float64(time.Microsecond))
+
+	p95, err := population.Percentile(85.0)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(170*time.Microsecond), p95, 10*float64(time.Microsecond))
+
+	p975, err := population.Percentile(97.5)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(540*time.Microsecond), p975, 10*float64(time.Microsecond))
+
+	p9985, err := population.Percentile(99.85)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(1960*time.Microsecond), p9985, 10*float64(time.Microsecond))
+
+	buckets := makeBuckets(200, 400*time.Microsecond, 0*time.Millisecond)
+	histogram := makeHistogram(buckets, samples)
+	sw := bytes.NewBuffer(make([]byte, 0, 512))
+	printHistogram(sw, buckets, histogram, 40)
+	t.Logf("\n%s", sw.String())
 }

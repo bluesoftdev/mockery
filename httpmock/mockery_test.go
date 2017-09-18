@@ -1,6 +1,8 @@
-package httpMock
+package httpmock_test
 
 import (
+	. "github.com/danapsimer/mockery/httpmock"
+
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
 	"regexp"
@@ -10,6 +12,13 @@ import (
 func TestServeHTTP(t *testing.T) {
 	handler := Mockery(func() {
 		Header("SNAFU", "BAZ")
+		pathPattern := regexp.MustCompile("/foo/bar/snafu.*")
+		EndpointForCondition(
+			And(PathMatches(pathPattern), MethodIs("GET")),
+			func() {
+				Header("FOO", "SNAFU")
+				RespondWithFile(200, "ok.json")
+			})
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
 				Header("FOO", "BAR")
@@ -22,13 +31,6 @@ func TestServeHTTP(t *testing.T) {
 				RespondWithFile(200, "ok.json")
 			})
 		})
-		pathPattern := regexp.MustCompile("/foo/bar/snafu.*")
-		EndpointForCondition(
-			And(PathMatches(pathPattern), MethodIs("GET")),
-			func() {
-				Header("FOO", "SNAFU")
-				RespondWithFile(200, "ok.json")
-			})
 	})
 
 	mockWriter := httptest.NewRecorder()

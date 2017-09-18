@@ -1,8 +1,9 @@
-package httpMock
+package wiremock
 
 import (
 	"encoding/json"
 	"fmt"
+	. "github.com/danapsimer/mockery/httpmock"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -15,9 +16,6 @@ type wireMockValueCondition struct {
 	Contains        string
 	Matches         string
 	DoesNotMatch    string
-	//EqualToJson interface{}
-	//IgnoreArrayOrder bool
-	//IgnoreExtraElements bool
 }
 
 type wireMockRequest struct {
@@ -60,6 +58,8 @@ type wireMock struct {
 
 var mappingFilePattern = regexp.MustCompile("^.*\\.json$")
 
+// WireMockEndpoints takes the dirName and looks for .json files in a subdirectory named "mappings"
+// any files named in the mappings are looked for in the __files subdirectory of the base dir name.
 func WireMockEndpoints(dirName string) {
 	mappingDir := dirName + string(os.PathSeparator) + "mappings"
 	dataDir := dirName + string(os.PathSeparator) + "__files"
@@ -74,6 +74,8 @@ func WireMockEndpoints(dirName string) {
 	}
 }
 
+// WireMockEndpoint takes the name of the base dir the files are expected in and the filename of a
+// wiremock .json mapping file.
 func WireMockEndpoint(dataDirName, fileName string) {
 	f, err := os.Open(fileName)
 	if err != nil {

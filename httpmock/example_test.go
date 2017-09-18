@@ -1,19 +1,19 @@
-package main
+package httpmock_test
 
 import (
-	. "github.homedepot.com/dxp8048/mockery/httpMock"
+	. "github.com/danapsimer/mockery/httpmock"
 	"log"
 	"net/http"
 )
 
-func main() {
+func ExampleMockery() {
 
 	mockery := Mockery(func() {
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
 				Header("Content-Type", "application/json")
 				Header("FOO", "BAR")
-				RespondWithFile(500, "./httpMock/error.json")
+				RespondWithFile(500, "./error.json")
 				FixedDelay("10ms")
 			})
 		})
@@ -21,18 +21,21 @@ func main() {
 			Method("GET", func() {
 				Header("Content-Type", "application/json")
 				Header("FOO", "BAR")
-				RespondWithFile(200, "./httpMock/ok.json")
+				RespondWithFile(200, "./ok.json")
 				NormalDelay("10s", "5s", "20s")
 			})
 		})
 		Endpoint("/snafu/", func() {
 			Method("GET", func() {
+				Header("Content-Type", "application/xml")
+				Header("Cache-Control", "no-cache")
+				Header("Access-Control-Allow-Origin", "*")
 				Switch(ExtractQueryParameter("foo"), func() {
-					Case(RequestKeyStringEquals("bar"), func() {
-						Header("Content-Type", "application/xml")
-						Header("Cache-Control", "no-cache")
-						Header("Access-Control-Allow-Origin", "*")
-						RespondWithFile(http.StatusOK, "snafu_foo_bar_response.xml")
+					Case(StringEquals("bar"), func() {
+						RespondWithFile(http.StatusOK, "response.xml")
+					})
+					Default(func() {
+						RespondWithFile(http.StatusBadRequest, "error.xml")
 					})
 				})
 			})

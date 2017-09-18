@@ -1,4 +1,4 @@
-package httpMock
+package wiremock
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http/httptest"
 	"testing"
+	. "github.com/danapsimer/mockery/httpmock"
 )
 
 func TestWireMockEndpoints(t *testing.T) {

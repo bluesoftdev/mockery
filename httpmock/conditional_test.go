@@ -1,11 +1,14 @@
-package httpMock
+package httpmock_test
 
 import (
+	. "github.com/danapsimer/mockery/httpmock"
+
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -150,6 +153,6 @@ func TestExtractPathElementByIndex(t *testing.T) {
 
 func TestRequestKeyStringMatches(t *testing.T) {
 	key := "foo"
-	assert.False(t, RequestKeyStringMatches("\\d+").Accept(key))
-	assert.True(t, RequestKeyStringMatches("[a-z]+").Accept(key))
+	assert.False(t, StringMatches(regexp.MustCompile("\\d+")).Accept(key))
+	assert.True(t, StringMatches(regexp.MustCompile("[a-z]+")).Accept(key))
 }

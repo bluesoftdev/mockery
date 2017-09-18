@@ -1,4 +1,4 @@
-package httpMock
+package httpmock
 
 import (
 	"encoding/json"

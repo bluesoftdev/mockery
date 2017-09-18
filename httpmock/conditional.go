@@ -1,4 +1,4 @@
-package httpMock
+package httpmock
 
 import (
 	"gopkg.in/xmlpath.v2"
@@ -7,16 +7,19 @@ import (
 	"strings"
 )
 
+// Predicate is a class that can accept or reject a value based on some condition.
 type Predicate interface {
 	Accept(interface{}) bool
 }
 
+// PredicateFunc is an implementation of Predicate that is a function and calls itself on a call to Accept
 type PredicateFunc func(interface{}) bool
 
 func (pf PredicateFunc) Accept(v interface{}) bool {
 	return pf(v)
 }
 
+// And returns a predicate that is true if all of the passed predicates are true for the input.
 func And(predicates ...Predicate) Predicate {
 	return PredicateFunc(func(v interface{}) bool {
 		for _, p := range predicates {
@@ -28,6 +31,8 @@ func And(predicates ...Predicate) Predicate {
 	})
 }
 
+// Or returns a predicate that is true if any of the passed predicates are true.  Furthermore, it
+// stops executing predicates after the first true one.
 func Or(predicates ...Predicate) Predicate {
 	return PredicateFunc(func(v interface{}) bool {
 		for _, p := range predicates {
@@ -39,174 +44,209 @@ func Or(predicates ...Predicate) Predicate {
 	})
 }
 
+// Not returns a predicate that negates the condition defined by the passed predicate.
 func Not(predicate Predicate) Predicate {
 	return PredicateFunc(func(v interface{}) bool {
 		return !predicate.Accept(v)
 	})
 }
 
+// TruePredicate is a predicate that returns true for all inputs.
 var TruePredicate Predicate = PredicateFunc(func(v interface{}) bool { return true })
+
+// FalsePredicate is a predicate that returns false for all inputs.
 var FalsePredicate Predicate = PredicateFunc(func(v interface{}) bool { return false })
 
+// Extractor can extract a value from another value by calling the Extract method.
 type Extractor interface {
 	Extract(interface{}) interface{}
 }
 
+// ExtractorFunc is a function that calls itself when it's Extract emthod is called.
 type ExtractorFunc func(interface{}) interface{}
 
 func (ef ExtractorFunc) Extract(v interface{}) interface{} {
 	return ef(v)
 }
 
-// RequestPredicate is a function that takes a Request and returns true or false.
-type RequestPredicate Predicate
-
+// A predicate that returns true if the value passed is a string and is equal to the value of 'value'
 func StringEquals(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
 		return s.(string) == value
 	})
 }
 
+// A predicate that returns true if the value passed contains a substring matching 'value'.
 func StringContains(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
-		return strings.Contains(s.(string),value)
+		return strings.Contains(s.(string), value)
 	})
 }
 
+// A predicate that returns true if the value passed starts with a substring matching 'value'.
 func StringStartsWith(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
 		return strings.HasPrefix(s.(string), value)
 	})
 }
 
+// A predicate that returns true if the value passed ends with a substring matching 'value'.
 func StringEndsWith(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
 		return strings.HasSuffix(s.(string), value)
 	})
 }
 
+// A predicate that returns true if the regex matches 'value'.
 func StringMatches(regex *regexp.Regexp) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
 		return regex.MatchString(s.(string))
 	})
 }
 
+// ExtractedValueAccepted returns A predicate that extracts a value using Extractor and passes that value to the
+// provided predicate
 func ExtractedValueAccepted(extractor Extractor, predicate Predicate) Predicate {
 	return PredicateFunc(func(v interface{}) bool {
 		return predicate.Accept(extractor.Extract(v))
 	})
 }
 
-// RequestKeySupplier is a function that extracts a key from a Request.  For instance a RequestKeySupplier could
-// return the value of a query parameter or a header.
-type RequestKeySupplier Extractor
-
-// RequestKeyIdentity is a RequestKeySupplier that returns the entire Request.
-var IdentityExtractor RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+// RequestKeyIdentity is a Extractor that returns the entire Request.
+var IdentityExtractor Extractor = ExtractorFunc(func(r interface{}) interface{} {
 	return r
 })
 
-var MethodExtractor RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+// MethodExtractor is an extractor that returns the method of an http.Request.
+var MethodExtractor Extractor = ExtractorFunc(func(r interface{}) interface{} {
 	return r.(*http.Request).Method
 })
 
-func PathMatches(pathRegex *regexp.Regexp) RequestPredicate {
+// PathMatches returns a predicate that returns true if the path matches the pathRegex.
+func PathMatches(pathRegex *regexp.Regexp) Predicate {
 	return ExtractedValueAccepted(ExtractPath, StringMatches(pathRegex))
 }
 
-func PathEquals(path string) RequestPredicate {
+// PathEquals returns a predicate that returns true if the path equals 'path'
+func PathEquals(path string) Predicate {
 	return ExtractedValueAccepted(ExtractPath, StringEquals(path))
 }
 
-func PathStartsWith(path string) RequestPredicate {
+// PathStartsWith returns a predicate that returns true if the path starts with 'path'
+func PathStartsWith(path string) Predicate {
 	return ExtractedValueAccepted(ExtractPath, StringStartsWith(path))
 }
 
-func HeaderMatches(name string, pathRegex *regexp.Regexp) RequestPredicate {
-	return ExtractedValueAccepted(ExtractHeader(name), StringMatches(pathRegex))
+// HeaderMatches returns a predicate that returns true if the header named 'name' matches 'regex'
+func HeaderMatches(name string, regex *regexp.Regexp) Predicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringMatches(regex))
 }
 
-func HeaderEquals(name string, path string) RequestPredicate {
-	return ExtractedValueAccepted(ExtractHeader(name), StringEquals(path))
+// HeaderEquals returns a predicate that returns true if the header named 'name' equals 'value'
+func HeaderEquals(name string, value string) Predicate {
+	return ExtractedValueAccepted(ExtractHeader(name), StringEquals(value))
 }
 
-func HeaderEqualsIgnoreCase(name string, path string) RequestPredicate {
+// HeaderEqualsIgnoreCase returns a predicate that returns true if if the header named 'name' equals 'value', ignoring case.
+func HeaderEqualsIgnoreCase(name string, path string) Predicate {
 	return ExtractedValueAccepted(UpperCaseExtractor(ExtractHeader(name)), StringEquals(strings.ToUpper(path)))
 }
 
-func HeaderContains(name string, path string) RequestPredicate {
+func HeaderContains(name string, path string) Predicate {
 	return ExtractedValueAccepted(ExtractHeader(name), StringContains(path))
 }
 
-func HeaderContainsIgnoreCase(name string, path string) RequestPredicate {
+func HeaderContainsIgnoreCase(name string, path string) Predicate {
 	return ExtractedValueAccepted(UpperCaseExtractor(ExtractHeader(name)), StringContains(strings.ToUpper(path)))
 }
 
-func HeaderStartsWith(name string, path string) RequestPredicate {
+func HeaderStartsWith(name string, path string) Predicate {
 	return ExtractedValueAccepted(ExtractHeader(name), StringStartsWith(path))
 }
 
-func RequestURIMatches(pathRegex *regexp.Regexp) RequestPredicate {
+func RequestURIMatches(pathRegex *regexp.Regexp) Predicate {
 	return ExtractedValueAccepted(ExtractRequestURI, StringMatches(pathRegex))
 }
 
-func RequestURIEquals(path string) RequestPredicate {
+func RequestURIEquals(path string) Predicate {
 	return ExtractedValueAccepted(ExtractRequestURI, StringEquals(path))
 }
 
-func RequestURIStartsWith(path string) RequestPredicate {
+func RequestURIStartsWith(path string) Predicate {
 	return ExtractedValueAccepted(ExtractRequestURI, StringStartsWith(path))
 }
 
-func MethodIs(method string) RequestPredicate {
-	return ExtractedValueAccepted(MethodExtractor, StringEquals(method))
+// MethodIs returns a predicate that takes a request, extracts the method, and returns true if it equals the method
+// provided, ignoring case.
+func MethodIs(method string) Predicate {
+	return ExtractedValueAccepted(UpperCaseExtractor(MethodExtractor), StringEquals(strings.ToUpper(method)))
 }
 
-func QueryParamEquals(name, value string) RequestPredicate {
+// QueryParamContainsIgnoreCase returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if it equals the value provided.
+func QueryParamEquals(name, value string) Predicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringEquals(value))
 }
 
-func QueryParamEqualsIgnoreCase(name, value string) RequestPredicate {
+// QueryParamContainsIgnoreCase returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if it equals the value provided, ignoring case.
+func QueryParamEqualsIgnoreCase(name, value string) Predicate {
 	return ExtractedValueAccepted(UpperCaseExtractor(ExtractQueryParameter(name)), StringEquals(strings.ToUpper(value)))
 }
 
-func QueryParamContains(name, value string) RequestPredicate {
+// QueryParamContainsIgnoreCase returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if it contains the value provided.
+func QueryParamContains(name, value string) Predicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringContains(value))
 }
 
-func QueryParamContainsIgnoreCase(name, value string) RequestPredicate {
+// QueryParamContainsIgnoreCase returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if it contains the value provided, ignoring case.
+func QueryParamContainsIgnoreCase(name, value string) Predicate {
 	return ExtractedValueAccepted(UpperCaseExtractor(ExtractQueryParameter(name)), StringContains(strings.ToUpper(value)))
 }
 
-func QueryParamMatches(name string, pattern *regexp.Regexp) RequestPredicate {
+// QueryParamMatches returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if the value matches the pattern provided.
+func QueryParamMatches(name string, pattern *regexp.Regexp) Predicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringMatches(pattern))
 }
-func QueryParamStartsWith(name string, prefix string) RequestPredicate {
+
+// QueryParamStartsWith returns a Predicate that takes a request, extracts the query parameter specified and
+// returns true if the value starts with the prefix provided.
+func QueryParamStartsWith(name string, prefix string) Predicate {
 	return ExtractedValueAccepted(ExtractQueryParameter(name), StringStartsWith(prefix))
 }
 
-var ExtractPath RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+// ExtractPath is an Extractor that returns the request URL's Path property.  This is just path path portion of the URI.
+var ExtractPath Extractor = ExtractorFunc(func(r interface{}) interface{} {
 	return r.(*http.Request).URL.Path
 })
 
-var ExtractRequestURI RequestKeySupplier = ExtractorFunc(func(r interface{}) interface{} {
+// ExtractRequestURI is an Extractor that returns the request URL's RequestURI property.  This is the path and the query
+// portions of the URI.
+var ExtractRequestURI Extractor = ExtractorFunc(func(r interface{}) interface{} {
 	return r.(*http.Request).URL.RequestURI()
 })
 
-func ExtractHeader(name string) RequestKeySupplier {
+// ExtractHeader returns a Extractor that returns the value of the header named 'name'
+func ExtractHeader(name string) Extractor {
 	return ExtractorFunc(func(r interface{}) interface{} {
 		return r.(*http.Request).Header.Get(name)
 	})
 }
+
+// UpperCaseExctractor returns an Extractor that decorates the passed extractor by applying strings.ToUpper to the
+// value returned.
 func UpperCaseExtractor(extractor Extractor) Extractor {
 	return ExtractorFunc(func(v interface{}) interface{} {
 		return strings.ToUpper(extractor.Extract(v).(string))
 	})
 }
 
-// ExtractXPathString returns a RequestKeySupplier that uses XPATH expression to extract a string from the Body of the
+// ExtractXPathString returns a Extractor that uses XPATH expression to extract a string from the Body of the
 // Request.
-func ExtractXPathString(xpath string) RequestKeySupplier {
+func ExtractXPathString(xpath string) Extractor {
 	path := xmlpath.MustCompile(xpath)
 	return ExtractorFunc(func(r interface{}) interface{} {
 		str := ""
@@ -218,10 +258,10 @@ func ExtractXPathString(xpath string) RequestKeySupplier {
 	})
 }
 
-// ExtractPathElementByIndex returns a RequestKeySupplier that extracts the path element at the given position.  A
+// ExtractPathElementByIndex returns a Extractor that extracts the path element at the given position.  A
 // negative number denotes a position from the end (starting at 1 e.g. -1 is the last element in the path).  For
 // positive inputs, the counting starts at 1 as well.
-func ExtractPathElementByIndex(idx int) RequestKeySupplier {
+func ExtractPathElementByIndex(idx int) Extractor {
 	return ExtractorFunc(func(r interface{}) interface{} {
 		elements := strings.Split(r.(*http.Request).URL.Path, "/")
 		var i int
@@ -237,42 +277,21 @@ func ExtractPathElementByIndex(idx int) RequestKeySupplier {
 	})
 }
 
-// ExtractQueryParameter returns a RequestKeySupplier that extracts a query parameters value.
-func ExtractQueryParameter(name string) RequestKeySupplier {
+// ExtractQueryParameter returns a Extractor that extracts a query parameters value.
+func ExtractQueryParameter(name string) Extractor {
 	return ExtractorFunc(func(r interface{}) interface{} {
 		return r.(*http.Request).URL.Query().Get(name)
 	})
 }
 
-// RequestKeyPredicate is a function that takes a Request Key provided by a RequestKeyProvider and returns either true
-// or false.
-type RequestKeyPredicate Predicate
-
-// RequestKeyStringEquals returns a function that will compare the a RequestKey to the string provided and return true
-// if the strings are equal.
-func RequestKeyStringEquals(str string) RequestKeyPredicate {
-	return PredicateFunc(func(key interface{}) bool {
-		return key.(string) == str
-	})
-}
-
-// RequestKeyStringEquals returns a function that will compare the a RequestKey to the regex provided and return true
-// if the string matches.
-func RequestKeyStringMatches(regexStr string) RequestKeyPredicate {
-	regex := regexp.MustCompile(regexStr)
-	return PredicateFunc(func(key interface{}) bool {
-		return regex.MatchString(key.(string))
-	})
-}
-
 type when struct {
-	predicate     RequestPredicate
+	predicate     Predicate
 	trueResponse  http.Handler
 	falseResponse http.Handler
 }
 
 // When can be used within a Method's config function to conditionally choose one Response or another.
-func When(predicate RequestPredicate, trueResponseBuilder func(), falseResponseBuilder func()) {
+func When(predicate Predicate, trueResponseBuilder func(), falseResponseBuilder func()) {
 
 	outerMockMethodHandler := currentMockHandler
 	trueResponseBuilder()
@@ -294,12 +313,12 @@ func (wh *when) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 }
 
 type switchCase struct {
-	predicate RequestKeyPredicate
+	predicate Predicate
 	response  http.Handler
 }
 
 type switchCaseSet struct {
-	keySupplier    RequestKeySupplier
+	keySupplier    Extractor
 	switchCases    []*switchCase
 	defaultHandler http.Handler
 }
@@ -320,7 +339,7 @@ var currentSwitch *switchCaseSet
 // Switch con be used within a Method's config function to conditionally choose one of many possible responses.  The
 // first Case whose predicate returns true will be selected.  Otherwise the Response defined in the Default is used.
 // If there is no Default, then 404 is returned with an empty Body.
-func Switch(keySupplier RequestKeySupplier, cases func()) {
+func Switch(keySupplier Extractor, cases func()) {
 	handler := currentMockHandler
 	currentSwitch = &switchCaseSet{
 		keySupplier: keySupplier,
@@ -336,7 +355,7 @@ func Switch(keySupplier RequestKeySupplier, cases func()) {
 
 // Case used within a Switch to define a Response that will be returned if the case's predicate is true.  The order of
 // the case calls matter as the first to match will be used.
-func Case(predicate RequestKeyPredicate, responseBuilder func()) {
+func Case(predicate Predicate, responseBuilder func()) {
 	outerMockMethodHandler := currentMockHandler
 	responseBuilder()
 	responseMockMethod := currentMockHandler
