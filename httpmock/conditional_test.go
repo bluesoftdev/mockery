@@ -1,7 +1,7 @@
 package httpmock_test
 
 import (
-	. "github.com/danapsimer/mockery/httpmock"
+	. "github.com/bluesoftdev/mockery/httpmock"
 
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
