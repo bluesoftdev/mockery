@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"math"
 )
 
 type wireMockValueCondition struct {
@@ -164,9 +165,12 @@ func WireMockEndpoint(dataDirName, fileName string) {
 		}
 		if wm.Response.DelayDistribution != nil {
 			if wm.Response.DelayDistribution.Algorithm == "lognormal" {
-				stddev := wm.Response.DelayDistribution.Sigma * float64(wm.Response.DelayDistribution.Median)
+				s := wm.Response.DelayDistribution.Sigma
+ 				m := float64(wm.Response.DelayDistribution.Median)
+				mean := math.Exp(m + s * s /2)
+				stddev := math.Sqrt(math.Exp(2* m + s * s) * (math.Exp(s * s)-1))
 				NormalDelay(
-					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Median),
+					fmt.Sprintf("%dms", mean),
 					fmt.Sprintf("%dms", int(stddev)),
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Median+int(stddev*5.0)))
 			} else if wm.Response.DelayDistribution.Algorithm == "uniform" {
