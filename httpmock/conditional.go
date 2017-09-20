@@ -341,7 +341,7 @@ var currentSwitch *switchCaseSet
 // If there is no Default, then 404 is returned with an empty Body.
 func Switch(keySupplier Extractor, cases func()) {
 	handler := currentMockHandler
-	currentSwitch = &switchCaseSet{
+	sw := &switchCaseSet{
 		keySupplier: keySupplier,
 		switchCases: make([]*switchCase, 0, 10),
 		defaultHandler: http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
@@ -349,8 +349,11 @@ func Switch(keySupplier Extractor, cases func()) {
 			w.WriteHeader(404)
 		}),
 	}
+	outerSwitch := currentSwitch
+	currentSwitch = sw
 	cases()
 	currentMockHandler = currentSwitch
+	currentSwitch = outerSwitch
 }
 
 // Case used within a Switch to define a Response that will be returned if the case's predicate is true.  The order of
