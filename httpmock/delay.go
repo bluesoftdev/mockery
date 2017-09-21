@@ -82,9 +82,10 @@ func NormalDelay(mean, stdDev, max string) {
 	maxF := float64(maxDuration) / float64(time.Second)
 
 	// Calculate mu & sigma
-	a := math.Log(1 + math.Pow(stdDevF/meanF, 2))
-	u := math.Log(meanF) - a/2
-	s := math.Sqrt(a)
+	a := 1 + (stdDevF*stdDevF)/math.Pow(meanF, 2)
+	// u := math.Log(meanF) - a/2
+	u := math.Log(meanF/math.Sqrt(a))
+	s := math.Sqrt(math.Log(a))
 	DecorateHandler(Waiter(nextWaitTimeNormal(maxF,u,s)), NoopHandler)
 }
 

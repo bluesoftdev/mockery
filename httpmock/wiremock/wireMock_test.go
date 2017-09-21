@@ -2,17 +2,17 @@ package wiremock_test
 
 import (
 	"encoding/json"
+	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/mockery/httpmock/wiremock"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http/httptest"
 	"testing"
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/mockery/httpmock/wiremock"
 )
 
 func TestWireMockEndpoints(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("GET", "http://localhost/testmapping", nil)
@@ -28,7 +28,7 @@ func TestWireMockEndpoints(t *testing.T) {
 
 func TestWireMockEndpointsFileMapping(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("GET", "http://localhost/testfilemapping?foo=bar", nil)
@@ -44,7 +44,7 @@ func TestWireMockEndpointsFileMapping(t *testing.T) {
 
 func TestWireMockEndpointsFileMapping2(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("POST", "http://localhost/testfilemapping?foo=bar", nil)
@@ -60,7 +60,7 @@ func TestWireMockEndpointsFileMapping2(t *testing.T) {
 
 func TestWireMockEndpointsJsonMapping(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("GET", "http://localhost/testjsonmapping", nil)
@@ -83,10 +83,9 @@ func TestWireMockEndpointsJsonMapping(t *testing.T) {
 	assert.Equal(t, "value2", js1["key"])
 }
 
-
 func TestWireMockEndpointsPriorities(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("GET", "http://localhost/testpriority/12345", nil)
@@ -103,7 +102,7 @@ func TestWireMockEndpointsPriorities(t *testing.T) {
 	assert.NoError(t, err)
 	js, ok := f.(map[string]interface{})
 	assert.True(t, ok)
-	assert.Equal(t,"priority100", js["key"])
+	assert.Equal(t, "priority100", js["key"])
 
 	testRequest = httptest.NewRequest("GET", "http://localhost/testpriority/23451", nil)
 	responseWriter = httptest.NewRecorder()
@@ -117,17 +116,17 @@ func TestWireMockEndpointsPriorities(t *testing.T) {
 	err = json.Unmarshal(data, &f)
 	assert.NoError(t, err)
 	js, ok = f.(map[string]interface{})
-	assert.True(t,ok)
-	assert.Equal(t,"priority101", js["key"])
+	assert.True(t, ok)
+	assert.Equal(t, "priority101", js["key"])
 }
 
 func TestWireMockEndpointsHeaderMatching(t *testing.T) {
 	mockery := Mockery(func() {
-		WireMockEndpoints("./wiremock")
+		WireMockEndpoints(".")
 	})
 
 	testRequest := httptest.NewRequest("GET", "http://localhost/testheadermapping", nil)
-	testRequest.Header.Add("Accept","application/xml;encoding=utf-8")
+	testRequest.Header.Add("Accept", "application/xml;encoding=utf-8")
 	responseWriter := httptest.NewRecorder()
 	mockery.ServeHTTP(responseWriter, testRequest)
 	response := responseWriter.Result()
@@ -135,7 +134,7 @@ func TestWireMockEndpointsHeaderMatching(t *testing.T) {
 	assert.Equal(t, 404, response.StatusCode)
 
 	testRequest = httptest.NewRequest("GET", "http://localhost/testheadermapping", nil)
-	testRequest.Header.Add("Accept","application/json;encoding=utf-8")
+	testRequest.Header.Add("Accept", "application/json;encoding=utf-8")
 	responseWriter = httptest.NewRecorder()
 	mockery.ServeHTTP(responseWriter, testRequest)
 	response = responseWriter.Result()

@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"time"
 )
 
 type wireMockValueCondition struct {
@@ -166,13 +167,13 @@ func WireMockEndpoint(dataDirName, fileName string) {
 		if wm.Response.DelayDistribution != nil {
 			if wm.Response.DelayDistribution.Algorithm == "lognormal" {
 				s := wm.Response.DelayDistribution.Sigma
-				m := float64(wm.Response.DelayDistribution.Median)
-				mean := math.Exp(m + s*s/2)
-				stddev := math.Sqrt(math.Exp(2*m+s*s) * (math.Exp(s*s) - 1))
+				u := float64(wm.Response.DelayDistribution.Median) / float64(time.Second)
+				mean := math.Exp(u)
+				stddev := math.Sqrt(math.Exp(2*u+s*s) * (math.Exp(s*s) - 1))
 				NormalDelay(
-					fmt.Sprintf("%dms", mean),
-					fmt.Sprintf("%dms", int(stddev)),
-					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Median+int(stddev*5.0)))
+					fmt.Sprintf("%dns", int(mean*float64(time.Second))),
+					fmt.Sprintf("%dns", int(stddev*float64(time.Second))),
+					fmt.Sprintf("%dns", wm.Response.DelayDistribution.Median+int(stddev*5.0*float64(time.Second))))
 			} else if wm.Response.DelayDistribution.Algorithm == "uniform" {
 				UniformDelay(
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Lower),
