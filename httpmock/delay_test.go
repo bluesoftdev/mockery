@@ -116,7 +116,6 @@ func TestNormalDelay(t *testing.T) {
 }
 
 func TestNormalDelay2(t *testing.T) {
-	//nd := normalDelay{mean: 0.0001, stdDev: 0.0002, max: 0.001}
 	currentMockHandler = NoopHandler
 	NormalDelay("10us","20us", "200us")
 
