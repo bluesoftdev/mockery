@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"regexp"
-	"math"
 )
 
 type wireMockValueCondition struct {
@@ -166,9 +166,9 @@ func WireMockEndpoint(dataDirName, fileName string) {
 		if wm.Response.DelayDistribution != nil {
 			if wm.Response.DelayDistribution.Algorithm == "lognormal" {
 				s := wm.Response.DelayDistribution.Sigma
- 				m := float64(wm.Response.DelayDistribution.Median)
-				mean := math.Exp(m + s * s /2)
-				stddev := math.Sqrt(math.Exp(2* m + s * s) * (math.Exp(s * s)-1))
+				m := float64(wm.Response.DelayDistribution.Median)
+				mean := math.Exp(m + s*s/2)
+				stddev := math.Sqrt(math.Exp(2*m+s*s) * (math.Exp(s*s) - 1))
 				NormalDelay(
 					fmt.Sprintf("%dms", mean),
 					fmt.Sprintf("%dms", int(stddev)),
