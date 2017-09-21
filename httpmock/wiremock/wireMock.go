@@ -167,8 +167,8 @@ func WireMockEndpoint(dataDirName, fileName string) {
 		if wm.Response.DelayDistribution != nil {
 			if wm.Response.DelayDistribution.Algorithm == "lognormal" {
 				s := wm.Response.DelayDistribution.Sigma
-				u := float64(wm.Response.DelayDistribution.Median) / float64(time.Second)
-				mean := math.Exp(u)
+				mean := float64(wm.Response.DelayDistribution.Median) * float64(time.Millisecond) / float64(time.Second)
+				u := math.Log(mean)
 				stddev := math.Sqrt(math.Exp(2*u+s*s) * (math.Exp(s*s) - 1))
 				NormalDelay(
 					fmt.Sprintf("%dns", int(mean*float64(time.Second))),
