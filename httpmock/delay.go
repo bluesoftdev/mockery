@@ -57,7 +57,7 @@ func UniformDelay(min, max string) {
 	DecorateHandler(&ud, NoopHandler)
 }
 
-func nextWaitTimeNormal(m, u,s float64) func() time.Duration {
+func nextWaitTimeNormal(m, u, s float64) func() time.Duration {
 	return func() time.Duration {
 		return time.Duration(math.Min(m, math.Exp(float64(u)+float64(s)*rand.NormFloat64())) * float64(time.Second))
 	}
@@ -84,9 +84,47 @@ func NormalDelay(mean, stdDev, max string) {
 	// Calculate mu & sigma
 	a := 1 + (stdDevF*stdDevF)/math.Pow(meanF, 2)
 	// u := math.Log(meanF) - a/2
-	u := math.Log(meanF/math.Sqrt(a))
+	u := math.Log(meanF / math.Sqrt(a))
 	s := math.Sqrt(math.Log(a))
-	DecorateHandler(Waiter(nextWaitTimeNormal(maxF,u,s)), NoopHandler)
+	DecorateHandler(Waiter(nextWaitTimeNormal(maxF, u, s)), NoopHandler)
+}
+
+func nextWaitTimeSmoothedNormal(max, u, s float64) func() time.Duration {
+	next := make(chan time.Duration)
+	go func() {
+		for {
+			next <- time.Duration(math.Min(max, math.Exp(float64(u)+float64(s)*rand.NormFloat64())) * float64(time.Second))
+		}
+	}()
+	return func() time.Duration {
+		return <-next
+	}
+}
+
+func SmoothedNormalDelay(mean, stdDev, max string) {
+	var err error
+	meanDuration, err := time.ParseDuration(mean)
+	if err != nil {
+		panic(fmt.Sprintf("Parsing mean for NormalDelay in error = %s", err.Error()))
+	}
+	meanF := float64(meanDuration) / float64(time.Second)
+	stdDevDuration, err := time.ParseDuration(stdDev)
+	if err != nil {
+		panic(fmt.Sprintf("Parsing stdDev for NormalDelay in error = %s", err.Error()))
+	}
+	stdDevF := float64(stdDevDuration) / float64(time.Second)
+	maxDuration, err := time.ParseDuration(max)
+	if err != nil {
+		panic(fmt.Sprintf("Parsing max for NormalDelay in error = %s", err.Error()))
+	}
+	maxF := float64(maxDuration) / float64(time.Second)
+
+	// Calculate mu & sigma
+	a := 1 + (stdDevF*stdDevF)/math.Pow(meanF, 2)
+	// u := math.Log(meanF) - a/2
+	u := math.Log(meanF / math.Sqrt(a))
+	s := math.Sqrt(math.Log(a))
+	DecorateHandler(Waiter(nextWaitTimeNormal(maxF, u, s)), NoopHandler)
 }
 
 func Waiter(waitTime func() time.Duration) http.Handler {
