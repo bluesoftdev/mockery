@@ -10,3 +10,18 @@
 [submodule "vendor/golang.org/x/net"]
 	path = vendor/golang.org/x/net
 	url = https://go.googlesource.com/net
+[submodule "vendor/github.com/wcharczuk/go-chart"]
+	path = vendor/github.com/wcharczuk/go-chart
+	url = https://github.com/wcharczuk/go-chart
+[submodule "vendor/github.com/blendlabs/go-util"]
+	path = vendor/github.com/blendlabs/go-util
+	url = https://github.com/blendlabs/go-util
+[submodule "vendor/github.com/blendlabs/go-exception"]
+	path = vendor/github.com/blendlabs/go-exception
+	url = https://github.com/blendlabs/go-exception
+[submodule "vendor/github.com/golang/freetype"]
+	path = vendor/github.com/golang/freetype
+	url = https://github.com/golang/freetype
+[submodule "vendor/golang.org/x/image"]
+	path = vendor/golang.org/x/image
+	url = https://go.googlesource.com/image

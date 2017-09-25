@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/montanaflynn/stats"
 	"github.com/stretchr/testify/assert"
+	"github.com/wcharczuk/go-chart"
 	"io"
 	"math"
 	"testing"
 	"time"
+	"io/ioutil"
 )
 
 func makeHistogram(buckets, samples []time.Duration) []int {
@@ -151,6 +153,74 @@ func TestNormalDelay2(t *testing.T) {
 
 	buckets := makeBuckets(50, 200*time.Microsecond, 0*time.Millisecond)
 	histogram := makeHistogram(buckets, samples)
+	sw := bytes.NewBuffer(make([]byte, 0, 512))
+	printHistogram(sw, buckets, histogram, 40)
+	t.Logf("\n%s", sw.String())
+}
+
+
+func renderTimeSeries(times []time.Time, durations []time.Duration, fileName string) {
+	durationFloats := make([]float64,len(durations))
+	for i, d := range durations {
+		durationFloats[i] = float64(d) / float64(time.Second)
+	}
+	graph := chart.Chart{
+		XAxis: chart.XAxis{
+			Style: chart.Style{
+				Show: true,
+			},
+		},
+		Series: []chart.Series{
+			chart.TimeSeries{
+				XValues: times,
+				YValues: durationFloats,
+			},
+		},
+	}
+
+	ioutil.Write
+	graph.Render(chart.PNG, f)
+}
+
+func TestNormalSmoothedDelay(t *testing.T) {
+	currentMockHandler = NoopHandler
+	SmoothedNormalDelay("10us","20us", "200us")
+
+	numSamples := 10000
+	timeSamples := make([]time.Time, 0, numSamples)
+	durationSamples := make([]time.Duration, 0, numSamples)
+	for i := 0; i < numSamples; i++ {
+		duration := timeAction(func() {
+			currentMockHandler.ServeHTTP(nil,nil)
+		})
+		timeSamples = append(timeSamples, time.Now())
+		durationSamples = append(durationSamples,duration)
+	}
+
+	population := stats.LoadRawData(durationSamples)
+
+	mean, err := population.Mean()
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(10*time.Microsecond), mean, 10*float64(time.Microsecond))
+
+	median, err := population.Median()
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(10*time.Microsecond), median, 100*float64(time.Microsecond))
+
+	p95, err := population.Percentile(85.0)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(28*time.Microsecond), p95, 10*float64(time.Microsecond))
+
+	p975, err := population.Percentile(97.5)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(76*time.Microsecond), p975, 10*float64(time.Microsecond))
+
+	p9985, err := population.Percentile(99.85)
+	assert.NoError(t, err)
+	assert.InDelta(t, float64(196*time.Microsecond), p9985, 100*float64(time.Microsecond))
+
+	buckets := makeBuckets(50, 200*time.Microsecond, 0*time.Millisecond)
+	histogram := makeHistogram(buckets, durationSamples)
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())

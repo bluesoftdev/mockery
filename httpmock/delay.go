@@ -91,9 +91,16 @@ func NormalDelay(mean, stdDev, max string) {
 
 func nextWaitTimeSmoothedNormal(max, u, s float64) func() time.Duration {
 	next := make(chan time.Duration)
+	getNext := func() float64 {
+		return math.Exp(float64(u)+float64(s)*rand.NormFloat64())
+	}
+	a := 0.5
 	go func() {
+		var last float64
 		for {
-			next <- time.Duration(math.Min(max, math.Exp(float64(u)+float64(s)*rand.NormFloat64())) * float64(time.Second))
+			x := getNext()
+			n := a * x + (1.0 - a) * last
+			next <- time.Duration(math.Min(max, n) * float64(time.Second))
 		}
 	}()
 	return func() time.Duration {
