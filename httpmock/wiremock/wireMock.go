@@ -156,6 +156,7 @@ func WireMockEndpoint(dataDirName, fileName string) {
 			}
 		}
 		if wm.Response.BodyFileName != "" {
+			LogLocation(fmt.Sprintf("Responding with %s", wm.Response.BodyFileName))
 			RespondWithFile(wm.Response.Status, dataDirName+"/"+wm.Response.BodyFileName)
 		} else if wm.Response.Body != "" {
 			RespondWithString(wm.Response.Status, wm.Response.Body)

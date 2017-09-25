@@ -8,6 +8,8 @@ import (
 	"io"
 	"encoding/json"
 	"bytes"
+	"runtime"
+	"fmt"
 )
 
 func Header(name, value string) {
@@ -69,4 +71,20 @@ func Respond(status int) {
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(status)
 	}))
+}
+
+func LogLocation(comment string) {
+	frames := make([]uintptr,1)
+	runtime.Callers(2, frames)
+	fun := runtime.FuncForPC(frames[0]-1)
+	var fileLocation string
+	if fun == nil {
+		fileLocation = "Unknown"
+	} else {
+		file, line := fun.FileLine(frames[0])
+		fileLocation = fmt.Sprintf("%s:%d(%s)", file, line, fun.Name())
+	}
+	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		log.Printf("Endpoint Defined at %s: %s",fileLocation,comment)
+	}),NoopHandler)
 }
