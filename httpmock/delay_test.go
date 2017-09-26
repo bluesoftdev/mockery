@@ -10,7 +10,8 @@ import (
 	"math"
 	"testing"
 	"time"
-	"io/ioutil"
+	"os"
+	"log"
 )
 
 func makeHistogram(buckets, samples []time.Duration) []int {
@@ -121,14 +122,8 @@ func TestNormalDelay2(t *testing.T) {
 	currentMockHandler = NoopHandler
 	NormalDelay("10us","20us", "200us")
 
-	numSamples := 10000
-	samples := make([]time.Duration, 0, numSamples)
-	for i := 0; i < numSamples; i++ {
-		duration := timeAction(func() {
-			currentMockHandler.ServeHTTP(nil,nil)
-		})
-		samples = append(samples, duration)
-	}
+	timeSamples, samples := runSamples()
+
 	population := stats.LoadRawData(samples)
 
 	mean, err := population.Mean()
@@ -156,6 +151,7 @@ func TestNormalDelay2(t *testing.T) {
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())
+	renderTimeSeries(timeSamples,samples,"NormalDelayTest1.png")
 }
 
 
@@ -178,7 +174,11 @@ func renderTimeSeries(times []time.Time, durations []time.Duration, fileName str
 		},
 	}
 
-	ioutil.Write
+	f, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
 	graph.Render(chart.PNG, f)
 }
 
@@ -186,16 +186,7 @@ func TestNormalSmoothedDelay(t *testing.T) {
 	currentMockHandler = NoopHandler
 	SmoothedNormalDelay("10us","20us", "200us")
 
-	numSamples := 10000
-	timeSamples := make([]time.Time, 0, numSamples)
-	durationSamples := make([]time.Duration, 0, numSamples)
-	for i := 0; i < numSamples; i++ {
-		duration := timeAction(func() {
-			currentMockHandler.ServeHTTP(nil,nil)
-		})
-		timeSamples = append(timeSamples, time.Now())
-		durationSamples = append(durationSamples,duration)
-	}
+	timeSamples, durationSamples := runSamples()
 
 	population := stats.LoadRawData(durationSamples)
 
@@ -205,7 +196,7 @@ func TestNormalSmoothedDelay(t *testing.T) {
 
 	median, err := population.Median()
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(10*time.Microsecond), median, 100*float64(time.Microsecond))
+	assert.InDelta(t, float64(10*time.Microsecond), median, 5*float64(time.Microsecond))
 
 	p95, err := population.Percentile(85.0)
 	assert.NoError(t, err)
@@ -213,15 +204,30 @@ func TestNormalSmoothedDelay(t *testing.T) {
 
 	p975, err := population.Percentile(97.5)
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(76*time.Microsecond), p975, 10*float64(time.Microsecond))
+	assert.InDelta(t, float64(44*time.Microsecond), p975, 10*float64(time.Microsecond))
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
-	assert.InDelta(t, float64(196*time.Microsecond), p9985, 100*float64(time.Microsecond))
+	assert.InDelta(t, float64(60*time.Microsecond), p9985, 100*float64(time.Microsecond))
 
 	buckets := makeBuckets(50, 200*time.Microsecond, 0*time.Millisecond)
 	histogram := makeHistogram(buckets, durationSamples)
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())
+	renderTimeSeries(timeSamples, durationSamples, "SmooothedNormalDelayTest1.png")
+}
+
+func runSamples() ([]time.Time, []time.Duration) {
+	numSamples := 10000
+	timeSamples := make([]time.Time, 0, numSamples)
+	durationSamples := make([]time.Duration, 0, numSamples)
+	for i := 0; i < numSamples; i++ {
+		duration := timeAction(func() {
+			currentMockHandler.ServeHTTP(nil, nil)
+		})
+		timeSamples = append(timeSamples, time.Now())
+		durationSamples = append(durationSamples, duration)
+	}
+	return timeSamples, durationSamples
 }

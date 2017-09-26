@@ -91,15 +91,21 @@ func NormalDelay(mean, stdDev, max string) {
 
 func nextWaitTimeSmoothedNormal(max, u, s float64) func() time.Duration {
 	next := make(chan time.Duration)
+
 	getNext := func() float64 {
-		return math.Exp(float64(u)+float64(s)*rand.NormFloat64())
+		return math.Exp(float64(u) + float64(s)*rand.NormFloat64())
 	}
-	a := 0.5
+	a1 := 0.3
+	//a2 := 0.5
 	go func() {
-		var last float64
+		var last1 float64 = math.Exp(u)
+		//var last2 float64 = math.Exp(u)
 		for {
-			x := getNext()
-			n := a * x + (1.0 - a) * last
+			x1 := getNext()
+			n := a1*x1 + (1.0-a1)*last1
+			last1 = n
+			//n := a2*x2 + (1.0-a2)*last2
+			//last2 = n
 			next <- time.Duration(math.Min(max, n) * float64(time.Second))
 		}
 	}()
@@ -131,7 +137,7 @@ func SmoothedNormalDelay(mean, stdDev, max string) {
 	// u := math.Log(meanF) - a/2
 	u := math.Log(meanF / math.Sqrt(a))
 	s := math.Sqrt(math.Log(a))
-	DecorateHandler(Waiter(nextWaitTimeNormal(maxF, u, s)), NoopHandler)
+	DecorateHandler(Waiter(nextWaitTimeSmoothedNormal(maxF, u, s)), NoopHandler)
 }
 
 func Waiter(waitTime func() time.Duration) http.Handler {
