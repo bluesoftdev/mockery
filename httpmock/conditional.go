@@ -232,7 +232,17 @@ var ExtractRequestURI Extractor = ExtractorFunc(func(r interface{}) interface{} 
 // ExtractHeader returns a Extractor that returns the value of the header named 'name'
 func ExtractHeader(name string) Extractor {
 	return ExtractorFunc(func(r interface{}) interface{} {
+		if "HOST" == strings.ToUpper(name) {
+			return r.(*http.Request).Host
+		}
 		return r.(*http.Request).Header.Get(name)
+	})
+}
+
+// ExtractHost returns an Extractor that returns the value of the "Host" element in the request.
+func ExtractHost() Extractor {
+	return ExtractorFunc(func(r interface{}) interface{} {
+		return r.(*http.Request).Host
 	})
 }
 
