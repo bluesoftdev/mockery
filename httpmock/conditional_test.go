@@ -156,3 +156,10 @@ func TestRequestKeyStringMatches(t *testing.T) {
 	assert.False(t, StringMatches(regexp.MustCompile("\\d+")).Accept(key))
 	assert.True(t, StringMatches(regexp.MustCompile("[a-z]+")).Accept(key))
 }
+
+func TestHeaderContainsIgnoreCase(t *testing.T) {
+	request, _ := http.NewRequest("GET","http://foo.bar.com/snafu", nil)
+	request.Header.Add("host","foo.bar.com")
+	assert.True(t, HeaderContainsIgnoreCase("Host", "bar").Accept(request))
+	assert.False(t, HeaderContainsIgnoreCase("Host", "snafu").Accept(request))
+}

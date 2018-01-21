@@ -79,7 +79,7 @@ func StringEquals(value string) Predicate {
 // A predicate that returns true if the value passed contains a substring matching 'value'.
 func StringContains(value string) Predicate {
 	return PredicateFunc(func(s interface{}) bool {
-		return strings.Contains(value, s.(string))
+		return strings.Contains(s.(string), value)
 	})
 }
 
