@@ -1,12 +1,16 @@
 package httpmock
 
-import "regexp"
+import (
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/go-http-matchers/extractor"
+	"regexp"
+)
 
 // Endpoint defines an endpoint that uses the http.ServeMux to dispatch requests.  The content of the configureFunc
 // should be Method elements which may contain
 func Endpoint(url string, configureFunc func()) {
 	outerCurrentMockHandler := currentMockHandler
-	Switch(MethodExtractor, configureFunc)
+	Switch(ExtractMethod(), configureFunc)
 	currentMockery.Handle(url, currentMockHandler)
 	currentMockHandler = outerCurrentMockHandler
 }

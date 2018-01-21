@@ -2,6 +2,7 @@ package wiremock
 
 import (
 	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
 
 	"encoding/json"
 	"fmt"

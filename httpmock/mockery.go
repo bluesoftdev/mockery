@@ -1,6 +1,7 @@
 package httpmock
 
 import (
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
 	"net/http"
 	"sort"
 )

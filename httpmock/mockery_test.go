@@ -2,6 +2,7 @@ package httpmock_test
 
 import (
 	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
 
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
