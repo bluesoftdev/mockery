@@ -57,6 +57,10 @@ func RespondWithFile(status int, fileName string) {
 		if err != nil {
 			log.Printf("ERROR while serving up a file: %+v", err)
 		}
+		err = file.Close()
+		if err !=  nil {
+			log.Printf("ERROR while serving up a file: %+v", err)
+		}
 	}))
 }
 
