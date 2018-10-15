@@ -1,7 +1,7 @@
 package httpmock
 
 import (
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
 	"net/http"
 	"sort"
 )
@@ -79,7 +79,7 @@ var NoopHandler http.HandlerFunc = func(w http.ResponseWriter, request *http.Req
 // to create new DSL Methods, follow this pattern:
 //
 //    func Header(name, value string) {
-//      return Decoratehandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+//      return DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 //				w.Header.Add(name,value)
 //    	}), NoopHandler)
 //    }
@@ -91,4 +91,14 @@ func DecorateHandler(preHandler, postHandler http.Handler) {
 		delegate.ServeHTTP(w, request)
 		postHandler.ServeHTTP(w, request)
 	})
+}
+
+// DecorateHandlerBefore is like DecorateHandler but only applies a Decoration before the handler is called.
+func DecorateHandlerBefore(preHandler http.Handler) {
+	DecorateHandler(preHandler, NoopHandler)
+}
+
+// DecorateHandlerAfter is like DecorateHandler but only applies a Decoration after the handler is called.
+func DecorateHandlerAfter(postHandler http.Handler) {
+	DecorateHandler(NoopHandler, postHandler)
 }

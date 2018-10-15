@@ -114,6 +114,7 @@ func nextWaitTimeSmoothedNormal(max, u, s float64) func() time.Duration {
 	}
 }
 
+// WIP, This is an incomplete API and should not be used.
 func SmoothedNormalDelay(mean, stdDev, max string) {
 	var err error
 	meanDuration, err := time.ParseDuration(mean)

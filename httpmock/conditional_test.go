@@ -1,9 +1,9 @@
 package httpmock_test
 
 import (
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
-	. "github.com/bluesoftdev/go-http-matchers/extractor"
+	. "gitlab.com/ComputersFearMe/mockery/httpmock"
+	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
+	. "gitlab.com/ComputersFearMe/go-http-matchers/extractor"
 
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -22,7 +22,7 @@ func TestWhen(t *testing.T) {
 				When(PredicateFunc(func(r interface{}) bool {
 					return r.(*http.Request).Header.Get("Accept") == "application/json"
 				}), func() {
-					RespondWithFile(200, "./ok.json")
+					RespondWithFile(200, "testdata/ok.json")
 					Header("Content-Type", "application/json")
 				}, func() {
 					Respond(406)
@@ -62,13 +62,13 @@ func TestSwitch(t *testing.T) {
 					Case(PredicateFunc(func(acceptHeader interface{}) bool {
 						return acceptHeader.(string) == "application/json"
 					}), func() {
-						RespondWithFile(200, "./ok.json")
+						RespondWithFile(200, "testdata/ok.json")
 						Header("Content-Type", "application/json")
 					})
 					Case(PredicateFunc(func(acceptHeader interface{}) bool {
 						return acceptHeader.(string) == "application/xml"
 					}), func() {
-						RespondWithFile(200, "./ok.xml")
+						RespondWithFile(200, "testdata/ok.xml")
 						Header("Content-Type", "application/xml")
 					})
 					Default(func() {
@@ -106,6 +106,62 @@ func TestSwitch(t *testing.T) {
 	handler.ServeHTTP(mockWriter, testReq)
 	result = mockWriter.Result()
 	assert.Equal(t, 406, result.StatusCode)
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
+}
+
+
+func TestSwitchWithoutDefault(t *testing.T) {
+	handler := Mockery(func() {
+		Endpoint("/foo/bar", func() {
+			Method("GET", func() {
+				Header("Foo", "Bar")
+				Switch(ExtractorFunc(func(r interface{}) interface{} {
+					return r.(*http.Request).Header.Get("Accept")
+				}), func() {
+					Case(PredicateFunc(func(acceptHeader interface{}) bool {
+						return acceptHeader.(string) == "application/json"
+					}), func() {
+						RespondWithFile(200, "testdata/ok.json")
+						Header("Content-Type", "application/json")
+					})
+					Case(PredicateFunc(func(acceptHeader interface{}) bool {
+						return acceptHeader.(string) == "application/xml"
+					}), func() {
+						RespondWithFile(200, "testdata/ok.xml")
+						Header("Content-Type", "application/xml")
+					})
+				})
+			})
+		})
+	})
+
+	assert.NotNil(t, handler)
+
+	testReq, err := http.NewRequest("GET", "http://localhost/foo/bar", nil)
+
+	assert.NoError(t, err)
+
+	mockWriter := httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/json")
+	handler.ServeHTTP(mockWriter, testReq)
+	result := mockWriter.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
+
+	mockWriter = httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/xml")
+	handler.ServeHTTP(mockWriter, testReq)
+	result = mockWriter.Result()
+	assert.Equal(t, 200, result.StatusCode)
+	assert.Equal(t, "application/xml", result.Header.Get("Content-Type"))
+	assert.Equal(t, "Bar", result.Header.Get("FOO"))
+
+	mockWriter = httptest.NewRecorder()
+	testReq.Header.Set("Accept", "application/pdf")
+	handler.ServeHTTP(mockWriter, testReq)
+	result = mockWriter.Result()
+	assert.Equal(t, 404, result.StatusCode)
 	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 }
 

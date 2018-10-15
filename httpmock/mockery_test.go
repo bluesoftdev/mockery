@@ -1,8 +1,7 @@
-package httpmock_test
+package httpmock
 
 import (
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
 
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
@@ -18,18 +17,18 @@ func TestServeHTTP(t *testing.T) {
 			And(PathMatches(pathPattern), MethodIs("GET")),
 			func() {
 				Header("FOO", "SNAFU")
-				RespondWithFile(200, "ok.json")
+				RespondWithFile(200, "testdata/ok.json")
 			})
 		Endpoint("/foo/bar", func() {
 			Method("GET", func() {
 				Header("FOO", "BAR")
-				RespondWithFile(500, "error.json")
+				RespondWithFile(500, "testdata/error.json")
 			})
 		})
 		Endpoint("/foo/bar/", func() {
 			Method("GET", func() {
 				Header("FOO", "BAZ")
-				RespondWithFile(200, "ok.json")
+				RespondWithFile(200, "testdata/ok.json")
 			})
 		})
 	})
@@ -86,4 +85,42 @@ func BenchmarkServeHTTP(b *testing.B) {
 		mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
 		handler.ServeHTTP(mockWriter, mockRequest)
 	}
+}
+
+func TestDecorateHandler(t *testing.T) {
+	preCounter := countingHandler(0)
+	counter := countingHandler(0)
+	postCounter := countingHandler(0)
+	currentMockHandler = &counter
+	DecorateHandler(&preCounter,&postCounter)
+	mockWriter := httptest.NewRecorder()
+	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
+	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	assert.Equal(t, 1, int(preCounter))
+	assert.Equal(t, 1, int(counter))
+	assert.Equal(t, 1, int(postCounter))
+}
+
+func TestDecorateHandlerBefore(t *testing.T) {
+	preCounter := countingHandler(0)
+	counter := countingHandler(0)
+	currentMockHandler = &counter
+	DecorateHandlerBefore(&preCounter)
+	mockWriter := httptest.NewRecorder()
+	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
+	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	assert.Equal(t, 1, int(preCounter))
+	assert.Equal(t, 1, int(counter))
+}
+
+func TestDecorateHandlerAfter(t *testing.T) {
+	postCounter := countingHandler(0)
+	counter := countingHandler(0)
+	currentMockHandler = &counter
+	DecorateHandlerAfter(&postCounter)
+	mockWriter := httptest.NewRecorder()
+	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
+	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	assert.Equal(t, 1, int(postCounter))
+	assert.Equal(t, 1, int(counter))
 }

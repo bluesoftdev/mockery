@@ -46,7 +46,7 @@ func TestNormalDelay(t *testing.T) {
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())
-	renderTimeSeries(timeSamples,samples,"NormalDelayTest1.png")
+	renderTimeSeries(timeSamples,samples,"./testdata/NormalDelayTest1.png")
 }
 
 func TestNormalSmoothedDelay(t *testing.T) {
@@ -82,7 +82,7 @@ func TestNormalSmoothedDelay(t *testing.T) {
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())
-	renderTimeSeries(timeSamples, durationSamples, "SmooothedNormalDelayTest1.png")
+	renderTimeSeries(timeSamples, durationSamples, "./testdata/SmooothedNormalDelayTest1.png")
 }
 
 func renderTimeSeries(times []time.Time, durations []time.Duration, fileName string) {

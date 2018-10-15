@@ -27,6 +27,10 @@ func WriteStatusAndBody(status int, body interface{}) {
 	}))
 }
 
+func Created() {
+	Respond(201)
+}
+
 func RespondWithBadRequest(body interface{}) {
 	WriteStatusAndBody(400, body)
 }
