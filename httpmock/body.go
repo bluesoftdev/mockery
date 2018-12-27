@@ -3,8 +3,8 @@ package httpmock
 import (
 	"regexp"
 	"strings"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/extractor"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/go-http-matchers/extractor"
 )
 
 func BodyXPathEquals(xpath, value string) Predicate {

@@ -1,4 +1,4 @@
-This project has moved to [gitlab](https://gitlab.com/ComputersFearMe/mockery),
+This project has moved to [gitlab](https://github.com/bluesoftdev/mockery),
 if you are not on the gitlab site, please go there instead of using this
 github repo.
 

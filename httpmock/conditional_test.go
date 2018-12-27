@@ -1,9 +1,9 @@
 package httpmock_test
 
 import (
-	. "gitlab.com/ComputersFearMe/mockery/httpmock"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/extractor"
+	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/go-http-matchers/extractor"
 
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"

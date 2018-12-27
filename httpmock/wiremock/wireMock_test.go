@@ -2,8 +2,8 @@ package wiremock_test
 
 import (
 	"encoding/json"
-	. "gitlab.com/ComputersFearMe/mockery/httpmock"
-	. "gitlab.com/ComputersFearMe/mockery/httpmock/wiremock"
+	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/mockery/httpmock/wiremock"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http/httptest"

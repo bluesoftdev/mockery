@@ -1,7 +1,7 @@
 package httpmock
 
 import (
-	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
 	"net/http"
 	"sort"
 )

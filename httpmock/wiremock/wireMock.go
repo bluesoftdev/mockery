@@ -1,8 +1,8 @@
 package wiremock
 
 import (
-	. "gitlab.com/ComputersFearMe/mockery/httpmock"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/mockery/httpmock"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
 
 	"encoding/json"
 	"fmt"

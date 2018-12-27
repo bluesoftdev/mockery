@@ -1,8 +1,8 @@
 package httpmock
 
 import (
-	. "gitlab.com/ComputersFearMe/go-http-matchers/predicate"
-	. "gitlab.com/ComputersFearMe/go-http-matchers/extractor"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/go-http-matchers/extractor"
 	"regexp"
 )
 
