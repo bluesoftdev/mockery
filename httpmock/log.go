@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 )
 
+// This will cause the request information to be logged to the console.
 func LogRequest() {
 	outerMockHandler := currentMockHandler
 	currentMockHandler = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

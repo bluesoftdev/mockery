@@ -32,6 +32,7 @@ type normalDelay struct {
 	mean, stdDev, max float64
 }
 
+// Defines a fixed delay for the response.  The duration string should be formatted as expected by time.ParseDuration
 func FixedDelay(d string) {
 	dd, err := time.ParseDuration(d)
 	if err != nil {
@@ -42,6 +43,8 @@ func FixedDelay(d string) {
 	DecorateHandler(&fd, NoopHandler)
 }
 
+// Defines a delay that is uniformly distributed between a minimum and a maximum.  The min and max parameters are
+// expected to conform the the format expected by time.ParseDuration
 func UniformDelay(min, max string) {
 	var ud uniformDelay
 	var err error
@@ -63,6 +66,8 @@ func nextWaitTimeNormal(m, u, s float64) func() time.Duration {
 	}
 }
 
+// Defines a delay whose distribution conforms to a Normal Distribution with the given mean, standard deviation, and
+// maximum.  All the durations are expressed in a format compatible with time.ParseDuration
 func NormalDelay(mean, stdDev, max string) {
 	var err error
 	meanDuration, err := time.ParseDuration(mean)
@@ -141,6 +146,7 @@ func SmoothedNormalDelay(mean, stdDev, max string) {
 	DecorateHandler(Waiter(nextWaitTimeSmoothedNormal(maxF, u, s)), NoopHandler)
 }
 
+// Defines a generic waiter that will use the provided waitTime function to acquire the duration to wait.
 func Waiter(waitTime func() time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(waitTime())

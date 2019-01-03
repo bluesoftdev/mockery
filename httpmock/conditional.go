@@ -58,7 +58,7 @@ func (scs *switchCaseSet) ServeHTTP(w http.ResponseWriter, request *http.Request
 
 var currentSwitch *switchCaseSet
 
-// Switch con be used within a Method's config function to conditionally choose one of many possible responses.  The
+// Switch can be used within a Method's config function to conditionally choose one of many possible responses.  The
 // first Case whose predicate returns true will be selected.  Otherwise the Response defined in the Default is used.
 // If there is no Default, then 404 is returned with an empty Body.
 func Switch(keySupplier Extractor, cases func()) {
