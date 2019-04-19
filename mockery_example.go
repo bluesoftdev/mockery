@@ -1,20 +1,3 @@
-[![Go Lang Version](https://img.shields.io/badge/go-1.9-blue.svg?style=plastic)](http://golang.com)
-[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=plastic)](https://godoc.org/github.com/bluesoftdev/mockery)
-[![CircleCI](https://circleci.com/gh/bluesoftdev/mockery/tree/master.svg?style=svg)](https://circleci.com/gh/bluesoftdev/mockery/tree/master)
-
-# Mockery
-Mockery is a go library that enables programmers to create mock http
-servers for the purpose of testing their integrations in isolation.  It
-is particularly good at doing performance testing since one instance can
-handle a very large number of tps.  I have tested a basic mockery
-handling 100,000 tps without using more than 20% CPU on an 8 core
-system.
-
-# Getting Started
-
-Here is an example mockery.
-
-``` golang
 package mockery_test
 
 import (
@@ -63,8 +46,3 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8080", mockery))
 }
-```
-
-# Contributing
-
-see [Contributing](CONTRIBUTING.md)
