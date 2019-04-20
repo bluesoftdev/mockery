@@ -1,5 +1,6 @@
 [![Go Lang Version](https://img.shields.io/badge/go-1.9-blue.svg?style=plastic)](http://golang.com)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=plastic)](https://godoc.org/github.com/bluesoftdev/mockery)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bluesoftdev/mockery)](https://goreportcard.com/report/github.com/bluesoftdev/mockery)
 [![CircleCI](https://circleci.com/gh/bluesoftdev/mockery/tree/master.svg?style=svg)](https://circleci.com/gh/bluesoftdev/mockery/tree/master)
 
 # Mockery
