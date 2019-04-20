@@ -1,19 +1,19 @@
 package httpmock
 
 import (
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
-	. "github.com/bluesoftdev/go-http-matchers/extractor"
+	"github.com/bluesoftdev/go-http-matchers/extractor"
+	"github.com/bluesoftdev/go-http-matchers/predicate"
 	"net/http"
 )
 
 type when struct {
-	predicate     Predicate
+	predicate     predicate.Predicate
 	trueResponse  http.Handler
 	falseResponse http.Handler
 }
 
 // When can be used within a Method's config function to conditionally choose one Response or another.
-func When(predicate Predicate, trueResponseBuilder func(), falseResponseBuilder func()) {
+func When(predicate predicate.Predicate, trueResponseBuilder func(), falseResponseBuilder func()) {
 
 	outerMockMethodHandler := currentMockHandler
 	trueResponseBuilder()
@@ -35,12 +35,12 @@ func (wh *when) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 }
 
 type switchCase struct {
-	predicate Predicate
+	predicate predicate.Predicate
 	response  http.Handler
 }
 
 type switchCaseSet struct {
-	keySupplier    Extractor
+	keySupplier    extractor.Extractor
 	switchCases    []*switchCase
 	defaultHandler http.Handler
 }
@@ -61,7 +61,7 @@ var currentSwitch *switchCaseSet
 // Switch can be used within a Method's config function to conditionally choose one of many possible responses.  The
 // first Case whose predicate returns true will be selected.  Otherwise the Response defined in the Default is used.
 // If there is no Default, then 404 is returned with an empty Body.
-func Switch(keySupplier Extractor, cases func()) {
+func Switch(keySupplier extractor.Extractor, cases func()) {
 	handler := currentMockHandler
 	sw := &switchCaseSet{
 		keySupplier: keySupplier,
@@ -80,7 +80,7 @@ func Switch(keySupplier Extractor, cases func()) {
 
 // Case used within a Switch to define a Response that will be returned if the case's predicate is true.  The order of
 // the case calls matter as the first to match will be used.
-func Case(predicate Predicate, responseBuilder func()) {
+func Case(predicate predicate.Predicate, responseBuilder func()) {
 	outerMockMethodHandler := currentMockHandler
 	responseBuilder()
 	responseMockMethod := currentMockHandler

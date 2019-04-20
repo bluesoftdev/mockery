@@ -1,11 +1,11 @@
 package mockery_test
 
 import (
-	"log"
-	"net/http"
-	. "github.com/bluesoftdev/mockery/httpmock"
 	. "github.com/bluesoftdev/go-http-matchers/extractor"
 	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/mockery/httpmock"
+	"log"
+	"net/http"
 )
 
 func main() {

@@ -1,22 +1,23 @@
 package httpmock
 
 import (
-	"testing"
-	"io"
-	"os"
-	"net/http"
-	"net/url"
 	"github.com/stretchr/testify/assert"
+	"io"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
+	"testing"
 )
 
 type countingHandler int
-func (ch *countingHandler) ServeHTTP(w http.ResponseWriter,r *http.Request) {
-	*ch += 1
+
+func (ch *countingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	*ch++
 }
 
 func TestRespondWithReader(t *testing.T) {
-	var counter countingHandler = 0
+	var counter countingHandler
 	currentMockHandler = &counter
 	RespondWithReader(200, func() io.Reader {
 		file, err := os.Open("./testdata/response.xml")
@@ -26,11 +27,11 @@ func TestRespondWithReader(t *testing.T) {
 		}
 		return file
 	})
-	testUrl, _ :=  url.ParseRequestURI("http://localhost/foo")
+	testURL, _ := url.ParseRequestURI("http://localhost/foo")
 	request := &http.Request{
 		Method: "GET",
 		Header: http.Header{},
-		URL:    testUrl,
+		URL:    testURL,
 	}
 	mockWriter := httptest.NewRecorder()
 	currentMockHandler.ServeHTTP(mockWriter, request)

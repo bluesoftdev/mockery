@@ -1,8 +1,8 @@
 package wiremock
 
 import (
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	"github.com/bluesoftdev/go-http-matchers/predicate"
+	"github.com/bluesoftdev/mockery/httpmock"
 
 	"encoding/json"
 	"fmt"
@@ -91,37 +91,37 @@ func WireMockEndpoint(dataDirName, fileName string) {
 	if err != nil {
 		panic("Error parsing mapping file: " + err.Error())
 	}
-	predicates := make([]Predicate, 0, 10)
+	predicates := make([]predicate.Predicate, 0, 10)
 	if wm.Request.Url != "" {
-		predicates = append(predicates, RequestURIEquals(wm.Request.Url))
+		predicates = append(predicates, predicate.RequestURIEquals(wm.Request.Url))
 	} else if wm.Request.UrlPattern != "" {
-		predicates = append(predicates, RequestURIMatches(regexp.MustCompile(wm.Request.UrlPattern)))
+		predicates = append(predicates, predicate.RequestURIMatches(regexp.MustCompile(wm.Request.UrlPattern)))
 	} else if wm.Request.UrlPath != "" {
-		predicates = append(predicates, PathEquals(wm.Request.UrlPath))
+		predicates = append(predicates, predicate.PathEquals(wm.Request.UrlPath))
 	} else if wm.Request.UrlPathPattern != "" {
-		predicates = append(predicates, PathMatches(regexp.MustCompile(wm.Request.UrlPathPattern)))
+		predicates = append(predicates, predicate.PathMatches(regexp.MustCompile(wm.Request.UrlPathPattern)))
 	}
 	if wm.Request.Method != "" {
-		predicates = append(predicates, MethodIs(wm.Request.Method))
+		predicates = append(predicates, predicate.MethodIs(wm.Request.Method))
 	}
 	if wm.Request.Headers != nil {
 		for header, condition := range wm.Request.Headers {
 			if condition.EqualTo != "" {
 				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
-					predicates = append(predicates, HeaderEqualsIgnoreCase(header, condition.EqualTo))
+					predicates = append(predicates, predicate.HeaderEqualsIgnoreCase(header, condition.EqualTo))
 				} else {
-					predicates = append(predicates, HeaderEquals(header, condition.EqualTo))
+					predicates = append(predicates, predicate.HeaderEquals(header, condition.EqualTo))
 				}
 			} else if condition.Contains != "" {
 				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
-					predicates = append(predicates, HeaderContainsIgnoreCase(header, condition.Contains))
+					predicates = append(predicates, predicate.HeaderContainsIgnoreCase(header, condition.Contains))
 				} else {
-					predicates = append(predicates, HeaderContains(header, condition.Contains))
+					predicates = append(predicates, predicate.HeaderContains(header, condition.Contains))
 				}
 			} else if condition.Matches != "" {
-				predicates = append(predicates, HeaderMatches(header, regexp.MustCompile(condition.Matches)))
+				predicates = append(predicates, predicate.HeaderMatches(header, regexp.MustCompile(condition.Matches)))
 			} else if condition.DoesNotMatch != "" {
-				predicates = append(predicates, Not(HeaderMatches(header, regexp.MustCompile(condition.Matches))))
+				predicates = append(predicates, predicate.Not(predicate.HeaderMatches(header, regexp.MustCompile(condition.Matches))))
 			}
 		}
 	}
@@ -129,42 +129,42 @@ func WireMockEndpoint(dataDirName, fileName string) {
 		for query, condition := range wm.Request.QueryParameters {
 			if condition.EqualTo != "" {
 				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
-					predicates = append(predicates, QueryParamEqualsIgnoreCase(query, condition.EqualTo))
+					predicates = append(predicates, predicate.QueryParamEqualsIgnoreCase(query, condition.EqualTo))
 				} else {
-					predicates = append(predicates, QueryParamEquals(query, condition.EqualTo))
+					predicates = append(predicates, predicate.QueryParamEquals(query, condition.EqualTo))
 				}
 			} else if condition.Contains != "" {
 				if condition.CaseInsensitive != nil && *condition.CaseInsensitive {
-					predicates = append(predicates, QueryParamContainsIgnoreCase(query, condition.Contains))
+					predicates = append(predicates, predicate.QueryParamContainsIgnoreCase(query, condition.Contains))
 				} else {
-					predicates = append(predicates, QueryParamContains(query, condition.Contains))
+					predicates = append(predicates, predicate.QueryParamContains(query, condition.Contains))
 				}
 			} else if condition.Matches != "" {
-				predicates = append(predicates, QueryParamMatches(query, regexp.MustCompile(condition.Matches)))
+				predicates = append(predicates, predicate.QueryParamMatches(query, regexp.MustCompile(condition.Matches)))
 			} else if condition.DoesNotMatch != "" {
-				predicates = append(predicates, Not(QueryParamMatches(query, regexp.MustCompile(condition.Matches))))
+				predicates = append(predicates, predicate.Not(predicate.QueryParamMatches(query, regexp.MustCompile(condition.Matches))))
 			}
 		}
 	}
-	priority := DEFAULT_PRIORITY
+	priority := httpmock.DefaultPriority
 	if wm.Priority != nil {
 		priority = *wm.Priority
 	}
-	EndpointForConditionWithPriority(priority, And(predicates...), func() {
+	httpmock.EndpointForConditionWithPriority(priority, predicate.And(predicates...), func() {
 		if wm.Response.Headers != nil {
 			for k, v := range wm.Response.Headers {
-				Header(k, v.(string))
+				httpmock.Header(k, v.(string))
 			}
 		}
 		if wm.Response.BodyFileName != "" {
-			LogLocation(fmt.Sprintf("Responding with %s", wm.Response.BodyFileName))
-			RespondWithFile(wm.Response.Status, dataDirName+"/"+wm.Response.BodyFileName)
+			httpmock.LogLocation(fmt.Sprintf("Responding with %s", wm.Response.BodyFileName))
+			httpmock.RespondWithFile(wm.Response.Status, dataDirName+"/"+wm.Response.BodyFileName)
 		} else if wm.Response.Body != "" {
-			RespondWithString(wm.Response.Status, wm.Response.Body)
+			httpmock.RespondWithString(wm.Response.Status, wm.Response.Body)
 		} else if wm.Response.JsonBody != nil {
-			RespondWithJson(wm.Response.Status, wm.Response.JsonBody)
+			httpmock.RespondWithJson(wm.Response.Status, wm.Response.JsonBody)
 		} else {
-			Respond(wm.Response.Status)
+			httpmock.Respond(wm.Response.Status)
 		}
 		if wm.Response.DelayDistribution != nil {
 			if wm.Response.DelayDistribution.Algorithm == "lognormal" {
@@ -172,17 +172,17 @@ func WireMockEndpoint(dataDirName, fileName string) {
 				mean := float64(wm.Response.DelayDistribution.Median) * float64(time.Millisecond) / float64(time.Second)
 				u := math.Log(mean)
 				stddev := math.Sqrt(math.Exp(2*u+s*s) * (math.Exp(s*s) - 1))
-				NormalDelay(
+				httpmock.NormalDelay(
 					fmt.Sprintf("%dns", int(mean*float64(time.Second))),
 					fmt.Sprintf("%dns", int(stddev*float64(time.Second))),
 					fmt.Sprintf("%dns", wm.Response.DelayDistribution.Median+int(stddev*5.0*float64(time.Second))))
 			} else if wm.Response.DelayDistribution.Algorithm == "uniform" {
-				UniformDelay(
+				httpmock.UniformDelay(
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Lower),
 					fmt.Sprintf("%dms", wm.Response.DelayDistribution.Upper))
 			}
 		} else if wm.Response.FixedDelayMilliseconds != nil {
-			FixedDelay(fmt.Sprintf("%dms", *wm.Response.FixedDelayMilliseconds))
+			httpmock.FixedDelay(fmt.Sprintf("%dms", *wm.Response.FixedDelayMilliseconds))
 		}
 	})
 }

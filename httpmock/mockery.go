@@ -1,14 +1,14 @@
 package httpmock
 
 import (
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	"github.com/bluesoftdev/go-http-matchers/predicate"
 	"net/http"
 	"sort"
 )
 
 type mockeryHandler struct {
 	priority  int
-	predicate Predicate
+	predicate predicate.Predicate
 	handler   http.Handler
 }
 
@@ -36,7 +36,7 @@ func (m *mockery) ServeHTTP(w http.ResponseWriter, request *http.Request) {
 func (m *mockery) Handle(path string, handler http.Handler) {
 	if m.mux == nil {
 		m.mux = http.NewServeMux()
-		m.HandleForCondition(DEFAULT_PRIORITY, PredicateFunc(func(r interface{}) bool {
+		m.HandleForCondition(DefaultPriority, predicate.PredicateFunc(func(r interface{}) bool {
 			_, p := m.mux.Handler(r.(*http.Request))
 			return p != ""
 		}), m.mux)
@@ -44,12 +44,12 @@ func (m *mockery) Handle(path string, handler http.Handler) {
 	m.mux.Handle(path, handler)
 }
 
-func (m *mockery) HandleForCondition(priority int, predicate Predicate, handler http.Handler) {
+func (m *mockery) HandleForCondition(priority int, predicate predicate.Predicate, handler http.Handler) {
 	m.handlers = append(m.handlers, &mockeryHandler{priority, predicate, handler})
 }
 
 var (
-	currentMockery     *mockery = nil
+	currentMockery     *mockery
 	currentMockHandler http.Handler
 )
 

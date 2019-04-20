@@ -92,10 +92,10 @@ func TestDecorateHandler(t *testing.T) {
 	counter := countingHandler(0)
 	postCounter := countingHandler(0)
 	currentMockHandler = &counter
-	DecorateHandler(&preCounter,&postCounter)
+	DecorateHandler(&preCounter, &postCounter)
 	mockWriter := httptest.NewRecorder()
 	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
-	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	currentMockHandler.ServeHTTP(mockWriter, mockRequest)
 	assert.Equal(t, 1, int(preCounter))
 	assert.Equal(t, 1, int(counter))
 	assert.Equal(t, 1, int(postCounter))
@@ -108,7 +108,7 @@ func TestDecorateHandlerBefore(t *testing.T) {
 	DecorateHandlerBefore(&preCounter)
 	mockWriter := httptest.NewRecorder()
 	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
-	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	currentMockHandler.ServeHTTP(mockWriter, mockRequest)
 	assert.Equal(t, 1, int(preCounter))
 	assert.Equal(t, 1, int(counter))
 }
@@ -120,7 +120,7 @@ func TestDecorateHandlerAfter(t *testing.T) {
 	DecorateHandlerAfter(&postCounter)
 	mockWriter := httptest.NewRecorder()
 	mockRequest := httptest.NewRequest("GET", "/foo/bar/snafu", nil)
-	currentMockHandler.ServeHTTP(mockWriter,mockRequest)
+	currentMockHandler.ServeHTTP(mockWriter, mockRequest)
 	assert.Equal(t, 1, int(postCounter))
 	assert.Equal(t, 1, int(counter))
 }

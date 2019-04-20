@@ -1,9 +1,9 @@
 package httpmock_test
 
 import (
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
 	. "github.com/bluesoftdev/go-http-matchers/extractor"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/mockery/httpmock"
 
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -108,7 +108,6 @@ func TestSwitch(t *testing.T) {
 	assert.Equal(t, 406, result.StatusCode)
 	assert.Equal(t, "Bar", result.Header.Get("FOO"))
 }
-
 
 func TestSwitchWithoutDefault(t *testing.T) {
 	handler := Mockery(func() {
@@ -216,8 +215,8 @@ func TestRequestKeyStringMatches(t *testing.T) {
 }
 
 func TestHeaderContainsIgnoreCase(t *testing.T) {
-	request, _ := http.NewRequest("GET","http://foo.bar.com/snafu", nil)
-	request.Header.Add("host","foo.bar.com")
+	request, _ := http.NewRequest("GET", "http://foo.bar.com/snafu", nil)
+	request.Header.Add("host", "foo.bar.com")
 	assert.True(t, HeaderContainsIgnoreCase("Host", "bar").Accept(request))
 	assert.False(t, HeaderContainsIgnoreCase("Host", "snafu").Accept(request))
 }

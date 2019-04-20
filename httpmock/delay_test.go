@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/wcharczuk/go-chart"
 	"io"
+	"log"
 	"math"
+	"os"
 	"testing"
 	"time"
-	"os"
-	"log"
 )
 
 func TestNormalDelay(t *testing.T) {
 	currentMockHandler = NoopHandler
-	NormalDelay("100ms","20ms", "200ms")
+	NormalDelay("100ms", "20ms", "200ms")
 
 	timeSamples, samples := runSamples()
 	population := stats.LoadRawData(samples)
@@ -46,12 +46,12 @@ func TestNormalDelay(t *testing.T) {
 	sw := bytes.NewBuffer(make([]byte, 0, 512))
 	printHistogram(sw, buckets, histogram, 40)
 	t.Logf("\n%s", sw.String())
-	renderTimeSeries(timeSamples,samples,"./testdata/NormalDelayTest1.png")
+	renderTimeSeries(timeSamples, samples, "./testdata/NormalDelayTest1.png")
 }
 
 func TestNormalSmoothedDelay(t *testing.T) {
 	currentMockHandler = NoopHandler
-	SmoothedNormalDelay("100ms","20ms", "200ms")
+	SmoothedNormalDelay("100ms", "20ms", "200ms")
 
 	timeSamples, durationSamples := runSamples()
 
@@ -86,7 +86,7 @@ func TestNormalSmoothedDelay(t *testing.T) {
 }
 
 func renderTimeSeries(times []time.Time, durations []time.Duration, fileName string) {
-	durationFloats := make([]float64,len(durations))
+	durationFloats := make([]float64, len(durations))
 	for i, d := range durations {
 		durationFloats[i] = float64(d) / float64(time.Second)
 	}
@@ -114,9 +114,10 @@ func renderTimeSeries(times []time.Time, durations []time.Duration, fileName str
 
 const parallel = 1000
 const samples = 10000
+
 type timedSample struct {
 	timestamp time.Time
-	duration time.Duration
+	duration  time.Duration
 }
 
 func runSamples() ([]time.Time, []time.Duration) {
@@ -124,32 +125,32 @@ func runSamples() ([]time.Time, []time.Duration) {
 	timeSamples := make([]time.Time, 0, numSamples)
 	durationSamples := make([]time.Duration, 0, numSamples)
 	sampleChan := make(chan timedSample, parallel)
-	doneChan := make(chan int,parallel)
+	doneChan := make(chan int, parallel)
 	for i := 0; i < parallel; i++ {
 		go func() {
 			for s := 0; s < numSamples/parallel; s++ {
 				duration := timeAction(func() {
-				  currentMockHandler.ServeHTTP(nil, nil)
-		  	})
-				sampleChan <- timedSample{time.Now(),duration}
-		  }
-		  doneChan <- i
-  	}()
+					currentMockHandler.ServeHTTP(nil, nil)
+				})
+				sampleChan <- timedSample{time.Now(), duration}
+			}
+			doneChan <- i
+		}()
 	}
 	done := 0
-	for done < parallel{
+	for done < parallel {
 		select {
-			case sample := <- sampleChan:
-				timeSamples = append(timeSamples,sample.timestamp)
-				durationSamples = append(durationSamples,sample.duration)
-			case <- doneChan:
-				done += 1
+		case sample := <-sampleChan:
+			timeSamples = append(timeSamples, sample.timestamp)
+			durationSamples = append(durationSamples, sample.duration)
+		case <-doneChan:
+			done++
 		}
 	}
 	close(sampleChan)
 	for sample := range sampleChan {
-		timeSamples = append(timeSamples,sample.timestamp)
-		durationSamples = append(durationSamples,sample.duration)
+		timeSamples = append(timeSamples, sample.timestamp)
+		durationSamples = append(durationSamples, sample.duration)
 	}
 	return timeSamples, durationSamples
 }
@@ -160,13 +161,13 @@ func makeHistogram(buckets, samples []time.Duration) []int {
 		counted := false
 		for i := range buckets {
 			if s < buckets[i] {
-				histo[i] += 1
+				histo[i]++
 				counted = true
 				break
 			}
 		}
 		if !counted {
-			histo[len(histo)-1] += 1
+			histo[len(histo)-1]++
 		}
 	}
 	return histo
@@ -176,8 +177,8 @@ func makeBuckets(size int, max, start time.Duration) []time.Duration {
 	interval := time.Duration(math.Floor(float64(max-start)/float64(size) + 0.5))
 	size = int((max - start) / interval)
 	buckets := make([]time.Duration, size, size)
-	var v time.Duration = start
-	for i := 0; i < size; i += 1 {
+	v := start
+	for i := 0; i < size; i++ {
 		v += interval
 		buckets[i] = v
 	}

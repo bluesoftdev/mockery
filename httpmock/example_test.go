@@ -1,9 +1,9 @@
 package httpmock_test
 
 import (
-	. "github.com/bluesoftdev/mockery/httpmock"
-	. "github.com/bluesoftdev/go-http-matchers/predicate"
 	. "github.com/bluesoftdev/go-http-matchers/extractor"
+	. "github.com/bluesoftdev/go-http-matchers/predicate"
+	. "github.com/bluesoftdev/mockery/httpmock"
 	"log"
 	"net/http"
 )

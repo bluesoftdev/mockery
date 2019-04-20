@@ -3,24 +3,23 @@ package httpmock
 import (
 	"os"
 	//"fmt"
-	"net/http"
-	"log"
-	"io"
-	"encoding/json"
 	"bytes"
-	"runtime"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"runtime"
 )
 
-// Adds a header to the response, may be called at any time.
+// Header adds a header to the response, may be called at any time.
 func Header(name, value string) {
 	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.Header().Add(name, value)
 	}), NoopHandler)
 }
 
-
-// Adds a trailer to the response, must be called after the response body has been specified.
+// Trailer adds a trailer to the response, must be called after the response body has been specified.
 func Trailer(name, value string) {
 	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.Header().Add("Trailer", name)
@@ -29,9 +28,9 @@ func Trailer(name, value string) {
 	}))
 }
 
-// Adds a response code and body to the response.  The jsonBody parameter is JSON encoded using the json encoder in the
-// encoding/json package.
-func RespondWithJson(status int, jsonBody interface{} ) {
+// RespondWithJson adds a response code and body to the response.  The jsonBody parameter is JSON encoded using the json
+// encoder in the encoding/json package.
+func RespondWithJson(status int, jsonBody interface{}) {
 	var data bytes.Buffer
 	json.NewEncoder(&data).Encode(jsonBody)
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
@@ -41,7 +40,7 @@ func RespondWithJson(status int, jsonBody interface{} ) {
 	}))
 }
 
-// Responds with the status code given and the content of the file specified.
+// RespondWithFile responds with the status code given and the content of the file specified.
 func RespondWithFile(status int, fileName string) {
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		file, err := os.Open(fileName)
@@ -56,13 +55,13 @@ func RespondWithFile(status int, fileName string) {
 			log.Printf("ERROR while serving up a file: %+v", err)
 		}
 		err = file.Close()
-		if err !=  nil {
+		if err != nil {
 			log.Printf("ERROR while serving up a file: %+v", err)
 		}
 	}))
 }
 
-// Responds with the status code given and the body
+// RespondWithString responds with the status code given and the body
 func RespondWithString(status int, body string) {
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(status)
@@ -70,24 +69,26 @@ func RespondWithString(status int, body string) {
 	}))
 }
 
+// RespondWithReader responds with the status code given and the body read from the io.Reader
 func RespondWithReader(status int, bodyProducer func() io.Reader) {
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(status)
-		io.Copy(w,bodyProducer())
+		io.Copy(w, bodyProducer())
 	}))
 }
 
+// Respond responds with an empty body and the given status code.
 func Respond(status int) {
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(status)
 	}))
 }
 
-
+// LogLocation will log the given comment along with the file and line number.
 func LogLocation(comment string) {
-	frames := make([]uintptr,1)
+	frames := make([]uintptr, 1)
 	runtime.Callers(2, frames)
-	fun := runtime.FuncForPC(frames[0]-1)
+	fun := runtime.FuncForPC(frames[0] - 1)
 	var fileLocation string
 	if fun == nil {
 		fileLocation = "Unknown"
@@ -96,6 +97,6 @@ func LogLocation(comment string) {
 		fileLocation = fmt.Sprintf("%s:%d(%s)", file, line, fun.Name())
 	}
 	DecorateHandler(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		log.Printf("Endpoint Defined at %s: %s",fileLocation,comment)
-	}),NoopHandler)
+		log.Printf("Endpoint Defined at %s: %s", fileLocation, comment)
+	}), NoopHandler)
 }
