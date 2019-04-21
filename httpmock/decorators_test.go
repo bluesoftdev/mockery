@@ -95,7 +95,7 @@ func TestRespondWithString(t *testing.T) {
 func TestRespondWithFile(t *testing.T) {
 	var counter countingHandler
 	currentMockHandler = &counter
-	RespondWithFile(200, "./testData/ok.json")
+	RespondWithFile(200, "./testdata/ok.json")
 	testURL, _ := url.ParseRequestURI("http://localhost/foo")
 	request := &http.Request{
 		Method: "GET",
@@ -116,7 +116,7 @@ func TestRespondWithFile(t *testing.T) {
 func TestRespondWithFileNotFound(t *testing.T) {
 	var counter countingHandler
 	currentMockHandler = &counter
-	RespondWithFile(200, "testData/notok.json")
+	RespondWithFile(200, "testdata/notok.json")
 	testURL, _ := url.ParseRequestURI("http://localhost/foo")
 	request := &http.Request{
 		Method: "GET",
