@@ -6,13 +6,12 @@ jobs:
   build:
     docker:
     # specify the version
-    - image: circleci/golang:1.9
+    - image: circleci/golang:1.12
     environment:
       CODECOV_TOKEN: 40ae381c-2fc2-4fb0-859d-d0310f465995
-    working_directory: /go/src/github.com/bluesoftdev/mockery
     steps:
     - checkout
     - run: |
-        go get -v -t -d ./...
+        go mod download
         go test -race -v -coverprofile=coverage.txt -covermode=atomic ./...
         bash <(curl -s https://codecov.io/bash)
