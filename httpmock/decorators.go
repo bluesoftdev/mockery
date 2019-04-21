@@ -63,14 +63,12 @@ func RespondWithFile(status int, fileName string) {
 
 // RespondWithString responds with the status code given and the body
 func RespondWithString(status int, body string) {
-	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		w.WriteHeader(status)
-		w.Write([]byte(body))
-	}))
+	WriteStatusAndBody(status, body)
 }
 
 // RespondWithReader responds with the status code given and the body read from the io.Reader
 func RespondWithReader(status int, bodyProducer func() io.Reader) {
+	WriteStatusAndBody(status, bodyProducer)
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(status)
 		io.Copy(w, bodyProducer())

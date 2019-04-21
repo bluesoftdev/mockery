@@ -14,6 +14,62 @@ import (
 	"time"
 )
 
+func TestFixedDelay(t *testing.T) {
+	currentMockHandler = NoopHandler
+	FixedDelay("100ms")
+
+	_, samples := runSamples()
+	population := stats.LoadRawData(samples)
+
+	mean, err := population.Mean()
+	assert.NoError(t, err)
+	assert.InDelta(t, 100*float64(time.Millisecond), mean, 3*float64(time.Millisecond))
+
+	median, err := population.Median()
+	assert.NoError(t, err)
+	assert.InDelta(t, 100*float64(time.Millisecond), median, 3*float64(time.Millisecond))
+
+	p95, err := population.Percentile(85.0)
+	assert.NoError(t, err)
+	assert.InDelta(t, 100*float64(time.Millisecond), p95, 5*float64(time.Millisecond))
+
+	p975, err := population.Percentile(97.5)
+	assert.NoError(t, err)
+	assert.InDelta(t, 100*float64(time.Millisecond), p975, 6*float64(time.Millisecond))
+
+	p9985, err := population.Percentile(99.85)
+	assert.NoError(t, err)
+	assert.InDelta(t, 100*float64(time.Millisecond), p9985, 7*float64(time.Millisecond))
+}
+
+func TestUniformDelay(t *testing.T) {
+	currentMockHandler = NoopHandler
+	UniformDelay("100ms", "200ms")
+
+	_, samples := runSamples()
+	population := stats.LoadRawData(samples)
+
+	mean, err := population.Mean()
+	assert.NoError(t, err)
+	assert.InDelta(t, 150*float64(time.Millisecond), mean, 3*float64(time.Millisecond))
+
+	median, err := population.Median()
+	assert.NoError(t, err)
+	assert.InDelta(t, 150*float64(time.Millisecond), median, 3*float64(time.Millisecond))
+
+	p95, err := population.Percentile(85.0)
+	assert.NoError(t, err)
+	assert.InDelta(t, 185*float64(time.Millisecond), p95, 3*float64(time.Millisecond))
+
+	p975, err := population.Percentile(97.5)
+	assert.NoError(t, err)
+	assert.InDelta(t, 197*float64(time.Millisecond), p975, 3*float64(time.Millisecond))
+
+	p9985, err := population.Percentile(99.85)
+	assert.NoError(t, err)
+	assert.InDelta(t, 199*float64(time.Millisecond), p9985, 3*float64(time.Millisecond))
+}
+
 func TestNormalDelay(t *testing.T) {
 	currentMockHandler = NoopHandler
 	NormalDelay("100ms", "20ms", "200ms")

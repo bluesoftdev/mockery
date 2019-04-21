@@ -1,20 +1,17 @@
 package httpmock
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 )
 
 // LogRequest will cause the request information to be logged to the console.
 func LogRequest() {
-	outerMockHandler := currentMockHandler
-	currentMockHandler = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	DecorateHandlerBefore(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		bytes, err := httputil.DumpRequest(r, true)
 		if err == nil {
-			fmt.Print("Request:")
-			fmt.Println(string(bytes))
+			log.Printf("Request:\n%s", string(bytes))
 		}
-		outerMockHandler.ServeHTTP(rw, r)
-	})
+	}))
 }

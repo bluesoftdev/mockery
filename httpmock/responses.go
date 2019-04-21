@@ -1,31 +1,43 @@
 package httpmock
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 )
 
 // WriteStatusAndBody writes the given status with the given body.  It is expected that any headers needed by the
 // response have been added as this will being the sending of the response.
 func WriteStatusAndBody(status int, body interface{}) {
-	var bytes []byte
+	var bodyProvider func() io.ReadCloser
 	var contentType string
-	if bodyStr, ok := body.(string); ok {
-		bytes = ([]byte)(bodyStr)
-	} else {
-		var err error
-		bytes, err = json.Marshal(body)
+	switch bdy := body.(type) {
+	case []byte:
+		bodyProvider = func() io.ReadCloser { return ioutil.NopCloser(bytes.NewBuffer(bdy)) }
+	case string:
+		bodyProvider = func() io.ReadCloser { return ioutil.NopCloser(bytes.NewBufferString(bdy)) }
+	case io.Reader:
+		bodyProvider = func() io.ReadCloser { return ioutil.NopCloser(bdy) }
+	case func() io.Reader:
+		bodyProvider = func() io.ReadCloser { return ioutil.NopCloser(bdy()) }
+	case func() io.ReadCloser:
+		bodyProvider = bdy
+	default:
+		bdyBytes, err := json.Marshal(bdy)
 		if err != nil {
 			panic("unable to marshal Body to json!")
 		}
-		contentType = "application/json"
+		bodyProvider = func() io.ReadCloser { return ioutil.NopCloser(bytes.NewBuffer(bdyBytes)) }
+		Header("Content-Type", "application/json")
 	}
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 		if contentType != "" {
 			w.Header().Set("Content-Type", "application/json")
 		}
 		w.WriteHeader(status)
-		w.Write(bytes)
+		io.Copy(w, bodyProvider())
 	}))
 }
 
