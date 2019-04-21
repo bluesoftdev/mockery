@@ -1,7 +1,7 @@
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/airbrake/gobrake v3.6.1+incompatible/go.mod h1:wM4gu3Cn0W0K7GUuVWnlXZU11AGBXMILnrdOU8Kn00o=
-github.com/blend/go-sdk v1.0.1 h1:VaMq7AONBJLHi9hepSZnU1WQ8Szg4YjXFjEbAjmkmgA=
+github.com/blend/go-sdk v1.0.1 h1:6ebw8zJNVMAHhHFNjvF82i/BkuWiTmDnrykOt21fq5U=
 github.com/blend/go-sdk v1.0.1/go.mod h1:IP1XHXFveOXHRnojRJO7XvqWGqyzevtXND9AdSztAe8=
 github.com/bluesoftdev/go-http-matchers v0.0.4 h1:t/+4LiSqoEl1Ly57SkL83V0qRAkvZSyL7QfMDtAfTw4=
 github.com/bluesoftdev/go-http-matchers v0.0.4/go.mod h1:uEE8MnkKlDrbkI8bv8SyrC3Xf8i8HC+4mZSEXn2qXrc=
