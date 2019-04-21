@@ -13,7 +13,6 @@ jobs:
     steps:
     - checkout
     - run: |
-        go mod download
         go get -v -t -d ./...
         go test -race -v -coverprofile=coverage.txt -covermode=atomic ./...
         bash <(curl -s https://codecov.io/bash)
