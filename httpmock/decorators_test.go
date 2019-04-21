@@ -67,7 +67,7 @@ func TestRespondWithJson(t *testing.T) {
 	assert.Equal(t, "application/json", result.Header.Get("Content-Type"))
 	bodyBytes, err := ioutil.ReadAll(result.Body)
 	if assert.NoError(t, err) {
-		assert.Equal(t, "{\"Name\":\"joe\",\"Age\":28}\n", string(bodyBytes))
+		assert.Equal(t, "{\"Name\":\"joe\",\"Age\":28}", string(bodyBytes))
 	}
 }
 
@@ -95,7 +95,7 @@ func TestRespondWithString(t *testing.T) {
 func TestRespondWithFile(t *testing.T) {
 	var counter countingHandler
 	currentMockHandler = &counter
-	RespondWithFile(200, "testData/ok.json")
+	RespondWithFile(200, "./testData/ok.json")
 	testURL, _ := url.ParseRequestURI("http://localhost/foo")
 	request := &http.Request{
 		Method: "GET",

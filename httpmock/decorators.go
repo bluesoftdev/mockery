@@ -2,9 +2,7 @@ package httpmock
 
 import (
 	"os"
-	//"fmt"
-	"bytes"
-	"encoding/json"
+
 	"fmt"
 	"io"
 	"log"
@@ -31,34 +29,19 @@ func Trailer(name, value string) {
 // RespondWithJson adds a response code and body to the response.  The jsonBody parameter is JSON encoded using the json
 // encoder in the encoding/json package.
 func RespondWithJson(status int, jsonBody interface{}) {
-	var data bytes.Buffer
-	json.NewEncoder(&data).Encode(jsonBody)
-	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
-		w.Write(data.Bytes())
-	}))
+	WriteStatusAndBody(status, jsonBody)
 }
 
 // RespondWithFile responds with the status code given and the content of the file specified.
 func RespondWithFile(status int, fileName string) {
-	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+	WriteStatusAndBody(status, func() io.ReadCloser {
 		file, err := os.Open(fileName)
 		if err != nil {
 			log.Printf("ERROR while serving up a file: %+v", err)
-			w.WriteHeader(500)
-			return
+			return nil
 		}
-		w.WriteHeader(status)
-		_, err = io.Copy(w, file)
-		if err != nil {
-			log.Printf("ERROR while serving up a file: %+v", err)
-		}
-		err = file.Close()
-		if err != nil {
-			log.Printf("ERROR while serving up a file: %+v", err)
-		}
-	}))
+		return file
+	})
 }
 
 // RespondWithString responds with the status code given and the body
@@ -69,17 +52,11 @@ func RespondWithString(status int, body string) {
 // RespondWithReader responds with the status code given and the body read from the io.Reader
 func RespondWithReader(status int, bodyProducer func() io.Reader) {
 	WriteStatusAndBody(status, bodyProducer)
-	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		w.WriteHeader(status)
-		io.Copy(w, bodyProducer())
-	}))
 }
 
 // Respond responds with an empty body and the given status code.
 func Respond(status int) {
-	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		w.WriteHeader(status)
-	}))
+	WriteStatusAndBody(status,"")
 }
 
 // LogLocation will log the given comment along with the file and line number.

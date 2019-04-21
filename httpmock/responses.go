@@ -33,11 +33,17 @@ func WriteStatusAndBody(status int, body interface{}) {
 		Header("Content-Type", "application/json")
 	}
 	DecorateHandler(NoopHandler, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		if contentType != "" {
-			w.Header().Set("Content-Type", "application/json")
+		readCloser := bodyProvider()
+		if readCloser != nil {
+			defer readCloser.Close()
+			if contentType != "" {
+				w.Header().Set("Content-Type", "application/json")
+			}
+			w.WriteHeader(status)
+			io.Copy(w, readCloser)
+		} else {
+			w.WriteHeader(500)
 		}
-		w.WriteHeader(status)
-		io.Copy(w, bodyProvider())
 	}))
 }
 

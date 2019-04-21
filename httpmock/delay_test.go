@@ -23,23 +23,23 @@ func TestFixedDelay(t *testing.T) {
 
 	mean, err := population.Mean()
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), mean, 3*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), mean, 10*float64(time.Millisecond))
 
 	median, err := population.Median()
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), median, 3*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), median, 10*float64(time.Millisecond))
 
 	p95, err := population.Percentile(85.0)
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), p95, 5*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), p95, 10*float64(time.Millisecond))
 
 	p975, err := population.Percentile(97.5)
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), p975, 6*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), p975, 10*float64(time.Millisecond))
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), p9985, 7*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), p9985, 10*float64(time.Millisecond))
 }
 
 func TestUniformDelay(t *testing.T) {
@@ -51,23 +51,23 @@ func TestUniformDelay(t *testing.T) {
 
 	mean, err := population.Mean()
 	assert.NoError(t, err)
-	assert.InDelta(t, 150*float64(time.Millisecond), mean, 3*float64(time.Millisecond))
+	assert.InDelta(t, 150*float64(time.Millisecond), mean, 10*float64(time.Millisecond))
 
 	median, err := population.Median()
 	assert.NoError(t, err)
-	assert.InDelta(t, 150*float64(time.Millisecond), median, 3*float64(time.Millisecond))
+	assert.InDelta(t, 150*float64(time.Millisecond), median, 10*float64(time.Millisecond))
 
 	p95, err := population.Percentile(85.0)
 	assert.NoError(t, err)
-	assert.InDelta(t, 185*float64(time.Millisecond), p95, 3*float64(time.Millisecond))
+	assert.InDelta(t, 185*float64(time.Millisecond), p95, 10*float64(time.Millisecond))
 
 	p975, err := population.Percentile(97.5)
 	assert.NoError(t, err)
-	assert.InDelta(t, 197*float64(time.Millisecond), p975, 3*float64(time.Millisecond))
+	assert.InDelta(t, 197*float64(time.Millisecond), p975, 10*float64(time.Millisecond))
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
-	assert.InDelta(t, 199*float64(time.Millisecond), p9985, 3*float64(time.Millisecond))
+	assert.InDelta(t, 199*float64(time.Millisecond), p9985, 10*float64(time.Millisecond))
 }
 
 func TestNormalDelay(t *testing.T) {
@@ -79,19 +79,19 @@ func TestNormalDelay(t *testing.T) {
 
 	mean, err := population.Mean()
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), mean, 1*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), mean, 10*float64(time.Millisecond))
 
 	median, err := population.Median()
 	assert.NoError(t, err)
-	assert.InDelta(t, 100*float64(time.Millisecond), median, 2*float64(time.Millisecond))
+	assert.InDelta(t, 100*float64(time.Millisecond), median, 10*float64(time.Millisecond))
 
 	p95, err := population.Percentile(85.0)
 	assert.NoError(t, err)
-	assert.InDelta(t, 120*float64(time.Millisecond), p95, 3*float64(time.Millisecond))
+	assert.InDelta(t, 120*float64(time.Millisecond), p95, 10*float64(time.Millisecond))
 
 	p975, err := population.Percentile(97.5)
 	assert.NoError(t, err)
-	assert.InDelta(t, 140*float64(time.Millisecond), p975, 10*float64(time.Millisecond))
+	assert.InDelta(t, 140*float64(time.Millisecond), p975, 15*float64(time.Millisecond))
 
 	p9985, err := population.Percentile(99.85)
 	assert.NoError(t, err)
