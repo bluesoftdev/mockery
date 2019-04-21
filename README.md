@@ -1,8 +1,8 @@
 [![Go Lang Version](https://img.shields.io/badge/go-1.12-00ADD8.svg?style=plastic)](http://golang.com)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-00ADD8.svg?style=plastic)](https://godoc.org/github.com/bluesoftdev/mockery)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bluesoftdev/mockery)](https://goreportcard.com/report/github.com/bluesoftdev/mockery)
-[![codecov](https://codecov.io/gh/bluesoftdev/mockery/branch/master/graph/badge.svg)](https://codecov.io/gh/bluesoftdev/mockery)
-[![CircleCI](https://circleci.com/gh/bluesoftdev/mockery/tree/master.svg?style=svg)](https://circleci.com/gh/bluesoftdev/mockery/tree/master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bluesoftdev/mockery?style=plastic)](https://goreportcard.com/report/github.com/bluesoftdev/mockery)
+[![codecov](https://img.shields.io/codecov/c/github/bluesoftdev/mockery.svg?style=plastic)](https://codecov.io/gh/bluesoftdev/mockery)
+[![CircleCI](https://img.shields.io/circleci/project/github/bluesoftdev/mockery.svg?style=plastic)](https://circleci.com/gh/bluesoftdev/mockery/tree/master)
 
 # Mockery
 Mockery is a go library that enables programmers to create mock http
